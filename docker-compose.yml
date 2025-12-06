@@ -49,9 +49,13 @@ services:
     container_name: testops-backend
     restart: unless-stopped
     ports:
-      - "8001:8000"
+      - "8001:8001"
     environment:
       - DATABASE_URL=postgresql+asyncpg://testops_user:testops_password@postgres:5432/testops_db
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=testops_user
+      - POSTGRES_PASSWORD=testops_password
+      - POSTGRES_DB=testops_db
       - REDIS_URL=redis://redis:6379
       - CLOUD_API_KEY=${CLOUD_API_KEY}
       - CLOUD_API_URL=https://foundation-models.api.cloud.ru/v1
