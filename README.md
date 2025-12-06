@@ -1,93 +1,272 @@
-# AI_devtools
+# TestOps Copilot
 
+Интеллектуальный ассистент для автоматизации рутинных операций QA-инженеров на базе Cloud.ru Evolution Foundation Model.
 
+## 🚀 Возможности
 
-## Getting started
+- **Генерация ручных тестов** из текстовых требований
+- **Генерация API тестов** из OpenAPI спецификаций
+- **Валидация кода** на соответствие стандартам
+- **Поиск дубликатов** в существующих тестах
+- **Интеграция с GitLab** для создания Merge Requests
+- **Красивый веб-интерфейс** с редактором кода
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 📋 Требования
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Docker и Docker Compose
+- Node.js 18+ (для локальной разработки)
+- Python 3.10+ (для локальной разработки)
 
-## Add your files
+## 🛠️ Быстрый старт через Docker
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+1. **Клонируйте репозиторий**:
+```bash
+git clone https://github.com/your-repo/testops-copilot.git
+cd testops-copilot
+```
+
+2. **Создайте .env файл**:
+```bash
+cp .env.example .env
+```
+
+3. **Отредактируйте .env файл**:
+```bash
+# Обязательные параметры
+CLOUD_API_KEY=your_cloud_api_key_here
+GITLAB_URL=http://gitlab.example.com
+GITLAB_TOKEN=your_gitlab_token_here
+SECRET_KEY=your_super_secret_key
+```
+
+4. **Запустите сервисы**:
+```bash
+docker-compose up -d
+```
+
+5. **Проверьте работу сервисов**:
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:8001
+- API документация: http://localhost:8001/docs
+- Grafana: http://localhost:3002 (admin/admin)
+
+## 🧪 Запуск тестов
+
+### Backend тесты
+```bash
+# Перейдите в директорию backend
+cd src/backend
+
+# Установите зависимости
+pip install -r requirements.txt
+pip install -r requirements-test.txt
+
+# Запустите тесты
+pytest tests/ -v
+
+# Запустите тесты с покрытием
+pytest tests/ -v --cov=src --cov-report=html
+
+# Запустите конкретные тесты
+pytest tests/test_api/test_generate.py -v
+```
+
+### Frontend тесты
+```bash
+# Перейдите в директорию frontend
+cd src/frontend
+
+# Установите зависимости
+npm ci
+
+# Запустите unit тесты
+npm test
+
+# Запустите тесты в watch режиме
+npm run test:watch
+
+# Запустите E2E тесты
+npm run test:e2e
+```
+
+### Все тесты вместе
+```bash
+# Запуск всех тестов через скрипт
+./scripts/run-all-tests.sh
+```
+
+## 📦 Структура проекта
 
 ```
-cd existing_repo
-git remote add origin http://89.169.132.244/hackathons/ai_devtools.git
-git branch -M main
-git push -uf origin main
+testops-copilot/
+├── src/
+│   ├── backend/          # FastAPI бэкенд
+│   │   ├── app/         # Исходный код
+│   │   └── tests/       # Тесты
+│   ├── frontend/        # React фронтенд
+│   │   ├── src/         # Исходный код
+│   │   └── tests/       # Тесты
+│   └── ai-core/         # ML/AI модуль
+├── tests/               # E2E тесты
+├── scripts/             # Вспомогательные скрипты
+├── docker-compose.yml   # Docker конфигурация
+└── README.md
 ```
 
-## Integrate with your tools
+## 🔧 Локальная разработка
 
-- [ ] [Set up project integrations](http://89.169.132.244/hackathons/ai_devtools/-/settings/integrations)
+### Backend
+```bash
+cd src/backend
 
-## Collaborate with your team
+# Создайте виртуальное окружение
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+# Установите зависимости
+pip install -r requirements.txt
 
-## Test and Deploy
+# Запустите миграции
+alembic upgrade head
 
-Use the built-in continuous integration in GitLab.
+# Запустите сервер
+uvicorn app.main:app --reload
+```
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Frontend
+```bash
+cd src/frontend
 
-***
+# Установите зависимости
+npm install
 
-# Editing this README
+# Запустите dev сервер
+npm run dev
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### AI Core Module
+```bash
+cd src/ai-core
 
-## Suggestions for a good README
+# Создайте виртуальное окружение
+python -m venv venv
+source venv/bin/activate
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+# Установите зависимости
+pip install -r requirements.txt
 
-## Name
-Choose a self-explaining name for your project.
+# Запустите тест генерации
+python -m generation.manual_tests
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## 📊 Использование
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### 1. Генерация ручных тестов
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+1. Откройте http://localhost:3001
+2. Перейдите в раздел "Чат с ассистентом"
+3. Введите требования:
+   ```
+   User should be able to:
+   - Login with valid credentials
+   - See error with invalid password
+   - Reset password via email
+   ```
+4. Нажмите "Отправить"
+5. Получите сгенерированный код в редакторе справа
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### 2. Генерация API тестов
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+1. В чате выберите тип генерации "API тесты"
+2. Загрузите OpenAPI спецификацию или вставьте YAML/JSON
+3. Укажите эндпоинты для покрытия
+4. Получите готовые pytest тесты
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 3. Валидация кода
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+1. Вставьте код тестов в чат
+2. Выберите действие "Валидировать"
+3. Получите отчет об ошибках и предупреждениях
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### 4. Интеграция с GitLab
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+1. Нажмите "Отправить в GitLab"
+2. Выберите проект и ветку
+3. Система создаст Merge Request с тестами
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## 🧪 Пример сгенерированного кода
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```python
+import allure
+import pytest
+from allure_commons.types import Severity
 
-## License
-For open source projects, say how it is licensed.
+@allure.feature("Authentication")
+@allure.story("User Login")
+@allure.label("owner", "QA Team")
+@allure.tag("generated_by_ai")
+class TestUserLogin:
+    @allure.title("User login with valid credentials")
+    @allure.severity(Severity.CRITICAL)
+    @allure.manual
+    def test_user_login_valid_credentials(self):
+        """
+        Verify user can login with valid username and password
+        """
+        with allure.step("Arrange: Open login page"):
+            # TODO: Navigate to login page
+            pass
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+        with allure.step("Act: Enter valid credentials"):
+            # TODO: Enter username and password
+            pass
+
+        with allure.step("Assert: Verify successful login"):
+            # TODO: Check user is logged in
+            pass
+```
+
+## 🔍 Мониторинг
+
+- **Prometheus**: http://localhost:9091
+- **Grafana**: http://localhost:3002
+  - Логин: admin
+  - Пароль: admin
+
+## 📝 Документация API
+
+- Swagger UI: http://localhost:8001/docs
+- ReDoc: http://localhost:8001/redoc
+
+## 🤝 Внесение вклада
+
+1. Форкните репозиторий
+2. Создайте ветку feature (`git checkout -b feature/amazing-feature`)
+3. Commit ваши изменения (`git commit -m 'Add amazing feature'`)
+4. Push в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
+
+## 📄 Лицензия
+
+Этот проект лицензирован под MIT License - см. файл LICENSE для деталей
+
+## 🆘 Поддержка
+
+Если у вас есть вопросы или проблемы, пожалуйста:
+1. Проверьте раздел [Issues](https://github.com/your-repo/testops-copilot/issues)
+2. Создайте новый issue с подробным описанием
+
+## 🗺️ Дорожная карта
+
+- [ ] Поддержка UI/E2E тестов
+- [ ] Интеграция с Jira
+- [ ] Мультиязычная поддержка
+- [ ] Вебхуки для CI/CD
+- [ ] Шаблоны тестов
+
+---
+
+**Авторы**: TestOps Copilot Team
+
+**Специально благодарим**: Cloud.ru за доступ к Evolution Foundation Model
