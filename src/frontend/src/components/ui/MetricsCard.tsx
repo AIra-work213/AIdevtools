@@ -1,12 +1,11 @@
-import React from 'react'
-import { LucideIcon } from 'lucide-react'
+import type { ComponentType, SVGProps } from 'react'
 
-interface Metric {
+export interface Metric {
   title: string
   value: string
   change: string
   changeType: 'increase' | 'decrease'
-  icon: LucideIcon
+  icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
 interface MetricsCardProps {

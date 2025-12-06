@@ -1,7 +1,4 @@
-import React from 'react'
 import { UserCircleIcon, SparklesIcon } from '@heroicons/react/24/outline'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 interface ChatMessageProps {
   message: {

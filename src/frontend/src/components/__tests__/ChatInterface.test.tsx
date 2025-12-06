@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -50,7 +50,7 @@ describe('Chat Page', () => {
   })
 
   test('sends message on form submit', async () => {
-    const user = userEvent.setup()
+    const user = userEvent
     renderWithProviders(<Chat />)
 
     const input = screen.getByPlaceholderText('Введите требования или описание теста...')
@@ -65,7 +65,7 @@ describe('Chat Page', () => {
   })
 
   test('validates empty message', async () => {
-    const user = userEvent.setup()
+    const user = userEvent
     renderWithProviders(<Chat />)
 
     const sendButton = screen.getByRole('button', { name: /отправить/i })
@@ -76,7 +76,7 @@ describe('Chat Page', () => {
   })
 
   test('handles file upload', async () => {
-    const user = userEvent.setup()
+    const user = userEvent
     renderWithProviders(<Chat />)
 
     const fileInput = screen.getByTitle('Прикрепить файл')
@@ -89,7 +89,7 @@ describe('Chat Page', () => {
   })
 
   test('clears file selection', async () => {
-    const user = userEvent.setup()
+    const user = userEvent
     renderWithProviders(<Chat />)
 
     const fileInput = screen.getByTitle('Прикрепить файл')
@@ -103,7 +103,7 @@ describe('Chat Page', () => {
   })
 
   test('opens settings panel', async () => {
-    const user = userEvent.setup()
+    const user = userEvent
     renderWithProviders(<Chat />)
 
     const settingsButton = screen.getByTitle('Настройки генерации')
@@ -128,7 +128,7 @@ describe('Chat Page', () => {
       }),
     }))
 
-    const user = userEvent.setup()
+    const user = userEvent
     renderWithProviders(<Chat />)
 
     const clearButton = screen.getByText('Очистить')

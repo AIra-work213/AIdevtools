@@ -1,10 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import Editor from '@monaco-editor/react'
 import {
   DocumentDuplicateIcon,
   ArrowDownTrayIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
 

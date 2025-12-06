@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,17 +18,11 @@ type MessageFormData = z.infer<typeof messageSchema>
 export function Chat() {
   const [generatedCode, setGeneratedCode] = useState('')
   const [showSettings, setShowSettings] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const {
-    messages,
-    isLoading,
-    sendMessage,
-    clearChat,
-    currentResponse,
-  } = useChatStore()
+  const { messages, isLoading, sendMessage, clearChat } = useChatStore()
 
   const {
     register,
@@ -45,9 +39,9 @@ export function Chat() {
 
   const onSubmit = async (data: MessageFormData) => {
     try {
-      await sendMessage(data.content, selectedFile)
+      await sendMessage(data.content, selectedFile ?? undefined)
       reset()
-      setSelectedFile(null)
+      setSelectedFile(undefined)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -79,7 +73,7 @@ export function Chat() {
   }
 
   const handleClearFile = () => {
-    setSelectedFile(null)
+    setSelectedFile(undefined)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }

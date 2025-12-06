@@ -1,12 +1,11 @@
-import React from 'react'
-import { UserCircleIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import type { RefObject } from 'react'
+import { SparklesIcon } from '@heroicons/react/24/outline'
 import { ChatMessage } from './ChatMessage'
-import { useChatStore } from '@/stores/chatStore'
 
 interface ChatInterfaceProps {
   messages: any[]
   isLoading: boolean
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  messagesEndRef: RefObject<HTMLDivElement>
   onCodeGenerated: (code: string) => void
 }
 

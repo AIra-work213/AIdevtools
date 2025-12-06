@@ -1,4 +1,3 @@
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChatBubbleLeftRightIcon,
@@ -6,14 +5,14 @@ import {
   ClockIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline'
-import { MetricsCard } from '@/components/ui/MetricsCard'
+import { MetricsCard, type Metric } from '@/components/ui/MetricsCard'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 
 export function Dashboard() {
   const navigate = useNavigate()
 
-  const metrics = [
+  const metrics: Metric[] = [
     {
       title: 'Сгенерировано тестов',
       value: '147',
