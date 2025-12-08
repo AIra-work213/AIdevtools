@@ -3,8 +3,120 @@ nohup: ввод игнорируется
 > testops-copilot-frontend@1.0.0 dev
 > vite
 
+Re-optimizing dependencies because lockfile has changed
 
-  VITE v5.4.21  ready in 457 ms
+  VITE v5.4.21  ready in 1038 ms
 
   ➜  Local:   http://localhost:3001/
   ➜  Network: use --host to expose
+20:10:22 [vite] Pre-transform error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+20:10:22 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:10:52 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:12:10 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:12:21 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:14:50 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:23:20 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:23:25 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:23:30 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:23:37 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)
+20:23:41 [vite] Internal server error: [postcss] It looks like you're trying to use `tailwindcss` directly as a PostCSS plugin. The PostCSS plugin has moved to a separate package, so to continue using Tailwind CSS with PostCSS you'll need to install `@tailwindcss/postcss` and update your PostCSS configuration.
+  Plugin: vite:css
+  File: /home/akira/Projects/AIdevtools/src/frontend/src/index.css:undefined:NaN
+      at at (/home/akira/Projects/AIdevtools/src/frontend/node_modules/tailwindcss/dist/lib.js:38:1629)
+      at LazyResult.runOnRoot (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:361:16)
+      at LazyResult.runAsync (/home/akira/Projects/AIdevtools/src/frontend/node_modules/postcss/lib/lazy-result.js:290:26)
+      at async compileCSS (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36898:21)
+      at async TransformPluginContext.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:36171:11)
+      at async PluginContainer.transform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:49099:18)
+      at async loadAndTransform (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:51978:27)
+      at async viteTransformMiddleware (file:///home/akira/Projects/AIdevtools/src/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:62106:24)

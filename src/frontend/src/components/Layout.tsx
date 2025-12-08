@@ -85,7 +85,7 @@ export function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-grow flex-col overflow-y-auto border-r border-white/10 bg-white/80 backdrop-blur dark:bg-slate-900/80">
           <div className="flex h-16 items-center px-6">
             <Logo />

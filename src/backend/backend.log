@@ -18,3 +18,4 @@ HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "H
 INFO:     127.0.0.1:56336 - "POST /api/v1/generate/manual HTTP/1.1" 200 OK
 INFO:     127.0.0.1:46288 - "GET /docs HTTP/1.1" 404 Not Found
 INFO:     127.0.0.1:54142 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53562 - "POST /api/v1/generate/manual HTTP/1.1" 401 Unauthorized
