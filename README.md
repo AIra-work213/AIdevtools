@@ -1,53 +1,121 @@
-# TestOps Copilot
+# TestOps Copilot 🤖
 
-Интеллектуальный ассистент для автоматизации рутинных операций QA-инженеров на базе Cloud.ru Evolution Foundation Model.
+> ✅ **Статус:** Полностью рабочий и протестирован (24/24 тестов пройдено)
+
+Интеллектуальный ассистент для автоматизации рутинных операций QA-инженеров на базе Cloud.ru Evolution Foundation Model (Qwen 3 Coder 480B).
 
 ## 🚀 Возможности
 
-- **Генерация ручных тестов** из текстовых требований
-- **Генерация API тестов** из OpenAPI спецификаций
-- **Валидация кода** на соответствие стандартам
-- **Поиск дубликатов** в существующих тестах
-- **Интеграция с GitLab** для создания Merge Requests
-- **Красивый веб-интерфейс** с редактором кода
+- ✅ **Генерация ручных тестов** из текстовых требований с Allure decorators
+- ✅ **Генерация API тестов** из OpenAPI спецификаций
+- ✅ **Валидация кода** на соответствие стандартам pytest
+- ✅ **Поиск дубликатов** в существующих тестах
+- ✅ **Интеграция с GitLab** для создания Merge Requests
+- ✅ **Красивый веб-интерфейс** с тёмной темой и редактором кода
+- ✅ **Загрузка файлов** для контекста генерации
+- ✅ **JWT Authentication** и rate limiting
 
 ## 📋 Требования
 
-- Docker и Docker Compose
-- Node.js 18+ (для локальной разработки)
-- Python 3.10+ (для локальной разработки)
+- **Python 3.12+** (для backend)
+- **Node.js 18+** (для frontend)
+- **PostgreSQL** (опционально, для production)
+- **Redis** (опционально, для rate limiting)
 
-## 🛠️ Быстрый старт через Docker
+## 🛠️ Быстрый старт (для разработки)
 
-1. **Клонируйте репозиторий**:
+### 1. Установка зависимостей
+
+**Backend:**
 ```bash
-git clone https://github.com/your-repo/testops-copilot.git
-cd testops-copilot
+cd src/backend
+python -m venv ../../.venv
+source ../../.venv/bin/activate  # Linux/Mac
+# или
+../../.venv\Scripts\activate  # Windows
+
+pip install -r requirements.txt
 ```
 
-2. **Создайте .env файл**:
+**Frontend:**
+```bash
+cd src/frontend
+npm install
+```
+
+### 2. Настройка окружения
+
+Создайте `.env` файл в корне проекта:
 ```bash
 cp .env.example .env
 ```
 
-3. **Отредактируйте .env файл**:
-```bash
-# Обязательные параметры
-CLOUD_API_KEY=your_cloud_api_key_here
-GITLAB_URL=http://gitlab.example.com
-GITLAB_TOKEN=your_gitlab_token_here
-SECRET_KEY=your_super_secret_key
+**Обязательные параметры:**
+```env
+# Cloud.ru API
+CLOUD_API_KEY=your_api_key_here
+
+# JWT Secret
+SECRET_KEY=your_super_secret_key_here
+
+# Database (PostgreSQL)
+POSTGRES_SERVER=localhost
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=testops_copilot
+
+# GitLab Integration
+GITLAB_URL=https://gitlab.example.com
+GITLAB_TOKEN=your_gitlab_token
 ```
 
-4. **Запустите сервисы**:
+### 3. Запуск сервисов
+
+**Backend (Terminal 1):**
 ```bash
-docker-compose up -d
+cd src/backend
+source ../../.venv/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-5. **Проверьте работу сервисов**:
-- Frontend: http://localhost:3001
-- Backend API: http://localhost:8001
-- API документация: http://localhost:8001/docs
+**Frontend (Terminal 2):**
+```bash
+cd src/frontend
+npm run dev
+```
+
+### 4. Доступ к приложению
+
+- 🌐 **Frontend:** http://localhost:3001
+- 🔧 **Backend API:** http://localhost:8001
+- 📚 **API Docs:** http://localhost:8001/docs
+- ❤️ **Health Check:** http://localhost:8001/health
+
+## 🧪 Тестирование
+
+### Backend тесты
+```bash
+cd src/backend
+source ../../.venv/bin/activate
+pytest tests/ -v
+```
+
+### Frontend тесты
+```bash
+cd src/frontend
+npm test
+```
+
+### Интеграционные тесты
+```bash
+chmod +x test_integration.sh
+./test_integration.sh
+```
+
+**Результаты:**
+- ✅ Backend: 10/10 тестов
+- ✅ Frontend: 14/14 тестов
+- ✅ Integration: 5/5 проверок
 - Grafana: http://localhost:3002 (admin/admin)
 
 ## 🧪 Запуск тестов

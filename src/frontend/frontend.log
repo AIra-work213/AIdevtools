@@ -1,0 +1,10 @@
+nohup: ввод игнорируется
+
+> testops-copilot-frontend@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 457 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
