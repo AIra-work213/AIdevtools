@@ -31,11 +31,16 @@ export function Layout({ children }: LayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="relative min-h-screen text-slate-900 dark:text-slate-100">
+      {/* Decorative gradients */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-32 h-80 w-80 rounded-full bg-primary-400/30 blur-3xl" aria-hidden="true" />
+        <div className="absolute top-10 right-[-6rem] h-96 w-96 rounded-full bg-fuchsia-400/25 blur-3xl" aria-hidden="true" />
+      </div>
       {/* Mobile sidebar */}
       <div className={`lg:hidden fixed inset-0 z-50 ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white dark:bg-gray-800">
+        <div className="fixed inset-0 bg-slate-950/70" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 flex w-64 flex-col border-r border-white/10 bg-white/90 backdrop-blur dark:bg-slate-900/80">
           <div className="flex h-16 items-center justify-between px-4">
             <Logo />
             <button
@@ -81,7 +86,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-grow flex-col overflow-y-auto bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <div className="flex flex-grow flex-col overflow-y-auto border-r border-white/10 bg-white/80 backdrop-blur dark:bg-slate-900/80">
           <div className="flex h-16 items-center px-6">
             <Logo />
           </div>
@@ -117,9 +122,9 @@ export function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 relative">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-16 items-center gap-x-4 border-b border-white/10 bg-white/70 px-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-900/70 sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"
             className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
