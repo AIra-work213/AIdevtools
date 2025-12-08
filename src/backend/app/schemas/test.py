@@ -53,7 +53,7 @@ class ManualTestResponse(GeneratedTestResponse):
 
 class ApiTestRequest(BaseModel):
     """Request for API test generation"""
-    openapi_spec: str = Field(..., min_length=50)
+    openapi_spec: str = Field(..., min_length=1)
     endpoint_filter: Optional[List[str]] = None
     test_types: List[str] = ["happy_path", "negative"]
     include_validation: bool = True

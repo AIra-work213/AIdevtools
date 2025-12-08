@@ -1,4 +1,5 @@
 import pytest
+from httpx import AsyncClient
 from unittest.mock import AsyncMock, patch
 
 from app.schemas.test import ManualTestRequest, ApiTestRequest
@@ -19,7 +20,7 @@ class TestGenerateAPI:
             }
         }
 
-        with patch('app.services.ai_service.AIService') as mock_service:
+        with patch('app.api.v1.endpoints.generate.AIService') as mock_service:
             # Mock the AI service response
             mock_instance = AsyncMock()
             mock_instance.generate_manual_tests.return_value = {
@@ -51,6 +52,12 @@ class TestGeneratedTests:
                     }
                 ],
                 "generation_time": 2.5
+            }
+            mock_instance.validate_code.return_value = {
+                "is_valid": True,
+                "errors": [],
+                "warnings": [],
+                "suggestions": []
             }
             mock_service.return_value = mock_instance
 
@@ -97,7 +104,7 @@ class TestGeneratedTests:
             "test_types": ["happy_path", "negative"]
         }
 
-        with patch('app.services.ai_service.AIService') as mock_service:
+        with patch('app.api.v1.endpoints.generate.AIService') as mock_service:
             mock_instance = AsyncMock()
             mock_instance.generate_api_tests.return_value = {
                 "code": """
@@ -115,6 +122,12 @@ class TestUserAPI:
                     "/users": ["get_success", "post_success", "post_invalid"]
                 },
                 "generation_time": 3.0
+            }
+            mock_instance.validate_code.return_value = {
+                "is_valid": True,
+                "errors": [],
+                "warnings": [],
+                "suggestions": []
             }
             mock_service.return_value = mock_instance
 
@@ -141,7 +154,7 @@ class TestUserAPI:
             "test_types": ["happy_path"]
         }
 
-        with patch('app.services.ai_service.AIService') as mock_service:
+        with patch('app.api.v1.endpoints.generate.AIService') as mock_service:
             mock_instance = AsyncMock()
             mock_instance.generate_api_tests.side_effect = ValueError("Invalid OpenAPI spec")
             mock_service.return_value = mock_instance

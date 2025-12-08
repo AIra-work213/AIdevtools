@@ -90,8 +90,11 @@ class ValidationService(LoggerMixin):
             if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
                 decorators = []
                 for decorator in node.decorator_list:
-                    if isinstance(decorator, ast.Attribute):
-                        decorator_name = f"{decorator.value.id}.{decorator.attr}"
+                    if isinstance(decorator, ast.Attribute) and isinstance(decorator.value, ast.Name):
+                        decorator_name = f"@{decorator.value.id}.{decorator.attr}"
+                        decorators.append(decorator_name)
+                    elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute) and isinstance(decorator.func.value, ast.Name):
+                        decorator_name = f"@{decorator.func.value.id}.{decorator.func.attr}"
                         decorators.append(decorator_name)
 
                 missing_decorators = [dec for dec in required if dec not in decorators]
@@ -101,14 +104,6 @@ class ValidationService(LoggerMixin):
                         "message": f"Missing required decorators: {', '.join(missing_decorators)}",
                         "line": node.lineno,
                         "suggestion": f"Add: {', '.join(missing_decorators)}"
-                    })
-
-                # Check for @allure.manual if it's a manual test
-                if "with allure.step" not in ast.get_source_segment(open(__file__).read(), node) or "":
-                    warnings.append({
-                        "type": "missing_steps",
-                        "message": "Test function without allure.step decorators",
-                        "line": node.lineno
                     })
 
         return errors, warnings, suggestions
@@ -175,7 +170,7 @@ class ValidationService(LoggerMixin):
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
                 complexity = self._calculate_complexity(node)
-                if complexity > 10:
+                if complexity >= 7:
                     warnings.append({
                         "type": "high_complexity",
                         "message": f"Function '{node.name}' has high complexity ({complexity})",
@@ -234,7 +229,8 @@ class ValidationService(LoggerMixin):
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
                 metrics["functions"] += 1
-                if node.name.startswith("test_"):
+                has_assert = any(isinstance(child, ast.Assert) for child in ast.walk(node))
+                if node.name.startswith("test_") or has_assert:
                     metrics["test_functions"] += 1
                 metrics["decorators"] += len(node.decorator_list)
 

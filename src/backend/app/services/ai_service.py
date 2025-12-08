@@ -172,7 +172,7 @@ class AIService(LoggerMixin):
 
     def __init__(self):
         self.llm_client = CloudEvolutionClient()
-        self.logger = self.logger.bind(service="AIService")
+        self._logger = logger.bind(service="AIService")
 
     async def generate_manual_tests(
         self,

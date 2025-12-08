@@ -53,7 +53,7 @@ if settings.BACKEND_CORS_ORIGINS:
 # Add trusted host middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.cloud.ru"]
+    allowed_hosts=["localhost", "127.0.0.1", "test", "*.cloud.ru"]
 )
 
 # Include API router

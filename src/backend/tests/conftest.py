@@ -1,12 +1,49 @@
+import os
 import pytest
+import pytest_asyncio
 import asyncio
 from typing import AsyncGenerator, Generator
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 
+# Provide default config for tests so settings validation does not fail
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("POSTGRES_SERVER", "localhost")
+os.environ.setdefault("POSTGRES_USER", "test")
+os.environ.setdefault("POSTGRES_PASSWORD", "test")
+os.environ.setdefault("POSTGRES_DB", "testdb")
+os.environ.setdefault("CLOUD_API_KEY", "test-api-key")
+os.environ.setdefault("GITLAB_URL", "http://gitlab.example.com")
+os.environ.setdefault("GITLAB_TOKEN", "test-token")
+
 from app.main import app
 from app.core.config import settings
+from app.core.deps import get_current_user
+from app.api.v1.endpoints import generate
+
+
+class _DummyRateLimiter:
+  """Simple in-memory rate limiter for tests."""
+
+  def __init__(self):
+    self.counts = {}
+
+  async def check_limit(self, key: str, limit: int = 10, window: int = 60):
+    current = self.counts.get(key, 0) + 1
+    self.counts[key] = current
+    if current > limit:
+      from fastapi import HTTPException, status
+      raise HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail="Rate limit exceeded. Please try again later.",
+        headers={"Retry-After": str(window)},
+      )
+
+
+# Override dependencies for tests
+app.dependency_overrides[get_current_user] = lambda: {"username": "test_user", "id": 1}
+generate.rate_limiter = _DummyRateLimiter()
 
 # Test database URL
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
@@ -35,7 +72,7 @@ def event_loop() -> Generator:
     loop.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test."""
     async with async_session_maker() as session:
@@ -48,7 +85,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """Create a test client for the FastAPI app."""
     async with AsyncClient(app=app, base_url="http://test") as ac:

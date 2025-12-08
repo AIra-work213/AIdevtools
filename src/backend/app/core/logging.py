@@ -50,4 +50,6 @@ class LoggerMixin:
     @property
     def logger(self) -> structlog.stdlib.BoundLogger:
         """Get structured logger for this class"""
+        if hasattr(self, "_logger"):
+            return self._logger
         return structlog.get_logger(self.__class__.__module__, self.__class__.__name__)
