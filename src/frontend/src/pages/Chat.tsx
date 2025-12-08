@@ -170,6 +170,8 @@ export function Chat() {
                 type="submit"
                 disabled={isLoading}
                 className="btn-primary"
+                aria-label="Отправить"
+                title="Отправить"
               >
                 <PaperAirplaneIcon className="h-4 w-4" />
               </button>

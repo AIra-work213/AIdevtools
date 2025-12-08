@@ -1,33 +1,53 @@
+import { Mock, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Chat } from '../../pages/Chat'
+import { useChatStore } from '../../stores/chatStore'
 
-// Mock zustand store
-jest.mock('../../stores/chatStore', () => ({
-  useChatStore: () => ({
-    messages: [],
-    isLoading: false,
-    error: null,
-    currentResponse: '',
-    sendMessage: jest.fn().mockResolvedValue(undefined),
-    clearChat: jest.fn(),
-  }),
+vi.mock('../../stores/chatStore', () => ({
+  useChatStore: vi.fn(),
 }))
 
-// Mock Monaco Editor
-jest.mock('@monaco-editor/react', () => {
-  return function MockEditor({ value }: { value: string }) {
-    return <textarea data-testid="code-editor" value={value} readOnly />
-  }
-})
+vi.mock('@monaco-editor/react', () => ({
+  __esModule: true,
+  default: ({ value }: { value: string }) => (
+    <textarea data-testid="code-editor" value={value} readOnly />
+  ),
+}))
 
 const createTestQueryClient = () => new QueryClient({
   defaultOptions: {
     queries: { retry: false },
     mutations: { retry: false },
   },
+})
+
+type MockStore = {
+  messages: Array<{ id: string; type: string; content: string; timestamp: Date }>
+  isLoading: boolean
+  error: string | null
+  currentResponse: string
+  sendMessage: ReturnType<typeof vi.fn>
+  clearChat: ReturnType<typeof vi.fn>
+}
+
+const createStore = (overrides: Partial<MockStore> = {}): MockStore => ({
+  messages: [],
+  isLoading: false,
+  error: null,
+  currentResponse: '',
+  sendMessage: vi.fn().mockResolvedValue(undefined),
+  clearChat: vi.fn(),
+  ...overrides,
+})
+
+const mockUseChatStore = useChatStore as unknown as Mock
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockUseChatStore.mockReturnValue(createStore())
 })
 
 const renderWithProviders = (ui: React.ReactElement) => {
@@ -71,8 +91,7 @@ describe('Chat Page', () => {
     const sendButton = screen.getByRole('button', { name: /отправить/i })
     await user.click(sendButton)
 
-    // Should show validation error
-    expect(screen.getByText('Сообщение не может быть пустым')).toBeInTheDocument()
+    expect(await screen.findByText('Сообщение не может быть пустым')).toBeInTheDocument()
   })
 
   test('handles file upload', async () => {
@@ -84,7 +103,6 @@ describe('Chat Page', () => {
 
     await user.upload(fileInput, file)
 
-    // Should display file name
     expect(screen.getByText('test.py')).toBeInTheDocument()
   })
 
@@ -98,7 +116,6 @@ describe('Chat Page', () => {
     await user.upload(fileInput, file)
     await user.click(screen.getByText('×'))
 
-    // File should be removed
     expect(screen.queryByText('test.py')).not.toBeInTheDocument()
   })
 
@@ -114,18 +131,12 @@ describe('Chat Page', () => {
   })
 
   test('clears chat history', async () => {
-    const mockClearChat = jest.fn()
-    jest.doMock('../../stores/chatStore', () => ({
-      useChatStore: () => ({
-        messages: [
-          { id: '1', type: 'user', content: 'Test message', timestamp: new Date() }
-        ],
-        isLoading: false,
-        error: null,
-        currentResponse: '',
-        sendMessage: jest.fn(),
-        clearChat: mockClearChat,
-      }),
+    const mockClearChat = vi.fn()
+    mockUseChatStore.mockReturnValue(createStore({
+      messages: [
+        { id: '1', type: 'user', content: 'Test message', timestamp: new Date() },
+      ],
+      clearChat: mockClearChat,
     }))
 
     const user = userEvent
