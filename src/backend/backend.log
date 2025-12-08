@@ -1,0 +1,20 @@
+nohup: ввод игнорируется
+INFO:     Started server process [31204]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-08T16:56:10.008023Z"}
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0{"error": "Error 111 connecting to localhost:6379. 111.", "event": "Rate limiter error", "logger": "app.core.deps", "level": "error", "timestamp": "2025-12-08T16:56:20.229651Z"}
+{"user": "test_user", "requirements_length": 31, "event": "Generating manual tests", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-08T16:56:20.292982Z"}
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+{"user": "test_user", "test_cases_count": 9, "generation_time": 17.726465463638306, "event": "Manual tests generated successfully", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-08T16:56:47.349546Z"}
+INFO:     127.0.0.1:35936 - "POST /api/v1/generate/manual HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56330 - "GET /health HTTP/1.1" 200 OK
+{"error": "Error 111 connecting to localhost:6379. 111.", "event": "Rate limiter error", "logger": "app.core.deps", "level": "error", "timestamp": "2025-12-08T16:58:26.866659Z"}
+{"user": "integration_test_user", "requirements_length": 32, "event": "Generating manual tests", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-08T16:58:26.985074Z"}
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+{"user": "integration_test_user", "test_cases_count": 9, "generation_time": 17.95930290222168, "event": "Manual tests generated successfully", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-08T16:58:54.826500Z"}
+INFO:     127.0.0.1:56336 - "POST /api/v1/generate/manual HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46288 - "GET /docs HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54142 - "GET /health HTTP/1.1" 200 OK

@@ -1,11 +1,16 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import List, Optional, Union
 from pydantic import AnyHttpUrl, FieldValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Get the path to the project root (2 levels up from this file)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.parent
+ENV_FILE = PROJECT_ROOT / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(env_file=str(ENV_FILE), case_sensitive=True)
 
     # Project
     PROJECT_NAME: str = "TestOps Copilot"

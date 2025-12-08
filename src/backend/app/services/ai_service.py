@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict, List, Optional, Union
 import structlog
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -104,7 +104,7 @@ class CloudEvolutionClient:
     """Client for Cloud.ru Evolution API with schema-guided reasoning"""
 
     def __init__(self):
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=settings.CLOUD_API_KEY,
             base_url=settings.CLOUD_API_URL
         )
@@ -431,7 +431,7 @@ class Test{class_name}:
         import re
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', text)
         s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
-        return re.sub(r'\W+', '_', s2).lower('_')
+        return re.sub(r'\W+', '_', s2).lower()
 
     def _generate_test_steps(self, steps: List[str], expected: str) -> str:
         """Generate test steps with allure.step"""
