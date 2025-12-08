@@ -46,6 +46,11 @@ class GeneratedTestResponse(BaseModel):
     metadata: Optional[TestMetadata] = None
 
 
+class ManualTestResponse(GeneratedTestResponse):
+    """Response for manual test generation (alias of GeneratedTestResponse)."""
+    pass
+
+
 class ApiTestRequest(BaseModel):
     """Request for API test generation"""
     openapi_spec: str = Field(..., min_length=50)

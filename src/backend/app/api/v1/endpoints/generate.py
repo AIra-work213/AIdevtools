@@ -11,8 +11,7 @@ from app.schemas.test import (
     ValidationResult
 )
 from app.services.ai_service import AIService
-from app.core.deps import get_current_user
-from app.core.security import RateLimiter
+from app.core.deps import RateLimiter, get_current_user
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
