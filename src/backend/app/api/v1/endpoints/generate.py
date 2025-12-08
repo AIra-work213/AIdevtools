@@ -11,7 +11,7 @@ from app.schemas.test import (
     ValidationResult
 )
 from app.services.ai_service import AIService
-from app.core.deps import RateLimiter, get_current_user
+from app.core.deps import RateLimiter, get_current_user, get_current_user_optional
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -23,19 +23,21 @@ rate_limiter = RateLimiter()
 @router.post("/manual", response_model=ManualTestResponse)
 async def generate_manual_tests(
     request: ManualTestRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user_optional)
 ) -> ManualTestResponse:
     """
     Generate manual test cases from requirements
     """
     # Apply rate limiting
-    await rate_limiter.check_limit(f"generate:manual:{current_user['id']}")
+    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
+    await rate_limiter.check_limit(f"generate:manual:{user_id}")
 
     try:
         ai_service = AIService()
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.info(
             "Generating manual tests",
-            user=current_user["username"],
+            user=username,
             requirements_length=len(request.requirements)
         )
 
@@ -79,12 +81,13 @@ async def generate_manual_tests(
 @router.post("/manual/stream")
 async def generate_manual_tests_stream(
     request: ManualTestRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user_optional)
 ) -> StreamingResponse:
     """
     Generate manual tests with streaming response
     """
-    await rate_limiter.check_limit(f"generate:manual:stream:{current_user['id']}")
+    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
+    await rate_limiter.check_limit(f"generate:manual:stream:{user_id}")
 
     async def generate_stream():
         try:
@@ -135,18 +138,20 @@ async def generate_manual_tests_stream(
 @router.post("/auto/api", response_model=ApiTestResponse)
 async def generate_api_tests(
     request: ApiTestRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user_optional)
 ) -> ApiTestResponse:
     """
     Generate API tests from OpenAPI specification
     """
-    await rate_limiter.check_limit(f"generate:api:{current_user['id']}")
+    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
+    await rate_limiter.check_limit(f"generate:api:{user_id}")
 
     try:
         ai_service = AIService()
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.info(
             "Generating API tests",
-            user=current_user["username"],
+            user=username,
             endpoints=request.endpoint_filter
         )
 
@@ -191,12 +196,13 @@ async def generate_api_tests(
 async def generate_ui_tests(
     html_content: str,
     selectors: Dict[str, str] = None,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user_optional)
 ):
     """
     Generate UI/E2E tests from HTML content or selectors
     """
-    await rate_limiter.check_limit(f"generate:ui:{current_user['id']}")
+    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
+    await rate_limiter.check_limit(f"generate:ui:{user_id}")
 
     # TODO: Implement UI test generation
     return {"status": "not_implemented"}
