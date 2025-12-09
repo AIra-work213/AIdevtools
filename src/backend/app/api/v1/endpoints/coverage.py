@@ -156,13 +156,22 @@ async def generate_tests_for_coverage(
     Generate tests to improve coverage for uncovered functions
     """
     try:
+        logger.info("Starting test generation", 
+                   function_count=len(request.uncovered_functions),
+                   language=request.generation_settings.language if request.generation_settings else "python",
+                   framework=request.generation_settings.framework if request.generation_settings else "pytest")
+        
         generated_tests = {}
         total_improvement = 0
         all_errors = []
         all_warnings = []
 
         # Generate tests for each uncovered function
-        for func in request.uncovered_functions:
+        for i, func in enumerate(request.uncovered_functions):
+            logger.info(f"Generating test {i+1}/{len(request.uncovered_functions)}", 
+                       function_name=func.name, 
+                       file_path=func.file_path,
+                       complexity=func.complexity)
             # Create prompt for AI
             prompt = f"""
             Generate comprehensive unit tests for the following function to ensure full coverage:
@@ -216,6 +225,12 @@ async def generate_tests_for_coverage(
         # Determine test files created
         test_files_created = [f"test_{name}.py" for name in generated_tests.keys()]
 
+        logger.info("Test generation complete", 
+                   tests_generated=len(generated_tests),
+                   coverage_improvement=coverage_improvement,
+                   errors_count=len(all_errors),
+                   warnings_count=len(all_warnings))
+
         return GenerateTestsForCoverageResponse(
             generated_tests=generated_tests,
             coverage_improvement=coverage_improvement,
@@ -229,7 +244,11 @@ async def generate_tests_for_coverage(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Failed to generate tests", 
+                    error=str(e), 
+                    error_type=type(e).__name__,
+                    exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate tests: {str(e)}")
 
 
 @router.get("/supported-languages")
