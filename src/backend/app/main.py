@@ -62,12 +62,10 @@ app.add_middleware(
 # Middleware for logging request bodies
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    # Cache request body for logging
-    body_bytes = await request.body()
-    
-    # Log request details
+    # Log request details for POST/PUT/PATCH
     if request.method in ["POST", "PUT", "PATCH"]:
         try:
+            body_bytes = await request.body()
             body_str = body_bytes.decode('utf-8')
             logger.info(
                 "Incoming request",
@@ -76,14 +74,14 @@ async def log_requests(request: Request, call_next):
                 headers={k: v for k, v in request.headers.items() if k.lower() not in ['authorization', 'cookie']},
                 body_preview=body_str[:500] if len(body_str) > 500 else body_str
             )
+            
+            # Create a new request with cached body
+            async def receive():
+                return {"type": "http.request", "body": body_bytes}
+            
+            request._receive = receive
         except Exception as e:
             logger.error("Error reading request body", error=str(e))
-    
-    # Create a new request with cached body
-    async def receive():
-        return {"type": "http.request", "body": body_bytes}
-    
-    request._receive = receive
     
     # Process request
     response = await call_next(request)
@@ -107,15 +105,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         "Validation error",
         method=request.method,
         url=str(request.url),
-        errors=exc.errors(),
-        body=await request.body()
+        errors=exc.errors()
     )
     return JSONResponse(
         status_code=422,
-        content={
-            "detail": exc.errors(),
-            "body": exc.body
-        }
+        content={"detail": exc.errors()}
     )
 
 
