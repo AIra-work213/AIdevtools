@@ -106,7 +106,9 @@ class CloudEvolutionClient:
     def __init__(self):
         self.client = AsyncOpenAI(
             api_key=settings.CLOUD_API_KEY,
-            base_url=settings.CLOUD_API_URL
+            base_url=settings.CLOUD_API_URL,
+            timeout=180.0,  # 3 minutes timeout for each request
+            max_retries=5   # Increase retries for flaky Cloud.ru API
         )
         self.model = settings.CLOUD_MODEL
         self.logger = logger.bind(service="CloudEvolutionClient")
