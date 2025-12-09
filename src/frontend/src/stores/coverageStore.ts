@@ -151,10 +151,17 @@ export const useCoverageStore = create<CoverageStore>((set, get) => ({
       formData.append('language', selectedLanguage);
       formData.append('framework', selectedFramework);
 
+      // Create AbortController with 10 minute timeout for large repos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000);
+
       const response = await fetch(`${API_BASE}/coverage/upload/github`, {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to analyze GitHub repository');
@@ -166,7 +173,11 @@ export const useCoverageStore = create<CoverageStore>((set, get) => ({
       toast.success(`GitHub analysis complete! Overall coverage: ${analysis.overall_coverage.toFixed(1)}%`);
     } catch (error) {
       console.error('Error analyzing GitHub repo:', error);
-      toast.error('Failed to analyze GitHub repository');
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error('Request timeout - repository is too large. Please try a smaller repository.');
+      } else {
+        toast.error('Failed to analyze GitHub repository');
+      }
     } finally {
       set({ isAnalyzing: false });
     }

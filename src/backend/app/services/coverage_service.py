@@ -391,35 +391,80 @@ class CodeUploader:
     async def upload_from_github(repo_url: str) -> List[UploadedFile]:
         """Clone and upload from GitHub repository"""
         logger.info("Starting GitHub repository clone", repo_url=repo_url)
+        
+        # Binary file extensions to skip
+        BINARY_EXTENSIONS = {
+            '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg',  # Images
+            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',  # Documents
+            '.zip', '.tar', '.gz', '.rar', '.7z',  # Archives
+            '.mp3', '.mp4', '.avi', '.mov', '.wav',  # Media
+            '.exe', '.dll', '.so', '.dylib',  # Binaries
+            '.pyc', '.pyo', '.class', '.jar',  # Compiled
+            '.pt', '.pth', '.h5', '.pb', '.onnx', '.weights',  # ML models
+            '.woff', '.woff2', '.ttf', '.eot',  # Fonts
+        }
+        
+        # Source code extensions to prioritize
+        SOURCE_EXTENSIONS = {
+            '.py', '.java', '.js', '.ts', '.jsx', '.tsx', '.c', '.cpp', '.h', '.hpp',
+            '.cs', '.go', '.rb', '.php', '.swift', '.kt', '.rs', '.scala', '.r',
+        }
+        
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 logger.info("Cloning repository", temp_dir=temp_dir)
-                # Clone the repository
-                Repo.clone_from(repo_url, temp_dir)
+                # Clone the repository with depth 1 for faster cloning
+                Repo.clone_from(repo_url, temp_dir, depth=1)
                 logger.info("Repository cloned successfully")
 
                 files = []
+                processed_count = 0
+                skipped_count = 0
+                
                 for root, dirs, file_names in os.walk(temp_dir):
                     # Skip hidden directories and common non-source directories
-                    dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'target', 'bin']]
+                    dirs[:] = [d for d in dirs if not d.startswith('.') and d not in [
+                        'node_modules', '__pycache__', 'target', 'bin', 'build', 'dist',
+                        '.git', '.idea', '.vscode', 'venv', 'env', '.pytest_cache'
+                    ]]
 
                     for file_name in file_names:
-                        if not file_name.startswith('.'):
-                            file_path = os.path.join(root, file_name)
-                            rel_path = os.path.relpath(file_path, temp_dir)
+                        if file_name.startswith('.'):
+                            continue
+                            
+                        # Check file extension
+                        file_ext = os.path.splitext(file_name)[1].lower()
+                        
+                        # Skip binary files
+                        if file_ext in BINARY_EXTENSIONS:
+                            skipped_count += 1
+                            continue
+                        
+                        # Process only source code files or files with no extension (like Dockerfile)
+                        if file_ext not in SOURCE_EXTENSIONS and file_ext:
+                            skipped_count += 1
+                            continue
+                            
+                        file_path = os.path.join(root, file_name)
+                        rel_path = os.path.relpath(file_path, temp_dir)
 
-                            try:
-                                with open(file_path, 'rb') as f:
-                                    content = f.read()
+                        try:
+                            with open(file_path, 'rb') as f:
+                                content = f.read()
 
-                                is_test = 'test' in file_name.lower() or 'spec' in file_name.lower()
-                                uploaded = await CodeUploader.upload_from_file(content, rel_path, is_test)
-                                files.append(uploaded)
-                            except Exception as file_error:
-                                logger.warning("Failed to process file", file_path=rel_path, error=str(file_error))
-                                continue
+                            is_test = 'test' in file_name.lower() or 'spec' in file_name.lower()
+                            uploaded = await CodeUploader.upload_from_file(content, rel_path, is_test)
+                            files.append(uploaded)
+                            processed_count += 1
+                        except Exception as file_error:
+                            logger.warning("Failed to process file", file_path=rel_path, error=str(file_error))
+                            skipped_count += 1
+                            continue
 
-                logger.info("Repository processed successfully", file_count=len(files))
+                logger.info("Repository processed successfully", 
+                           processed_files=processed_count, 
+                           skipped_files=skipped_count,
+                           total_files=len(files))
                 return files
         except Exception as e:
             logger.error("Failed to clone GitHub repository", repo_url=repo_url, error=str(e), error_type=type(e).__name__)
