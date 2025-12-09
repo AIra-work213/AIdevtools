@@ -17,3 +17,42 @@ INFO:     Started server process [30226]
 INFO:     Waiting for application startup.
 {"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T11:08:05.722708Z"}
 INFO:     Application startup complete.
+INFO:     127.0.0.1:37740 - "POST /api/v1/generate/manual HTTP/1.1" 422 Unprocessable Entity
+WARNING:  WatchFiles detected changes in 'app/schemas/test.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T11:15:52.368492Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30226]
+INFO:     Started server process [33477]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T11:15:57.102008Z"}
+INFO:     Application startup complete.
+{"error": "Error 111 connecting to localhost:6379. 111.", "event": "Rate limiter error", "logger": "app.core.deps", "level": "error", "timestamp": "2025-12-09T11:16:02.577255Z"}
+{"user": "anonymous", "requirements_length": 4, "event": "Generating manual tests", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-09T11:16:02.659022Z"}
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+{"user": "anonymous", "test_cases_count": 5, "generation_time": 9.14208197593689, "event": "Manual tests generated successfully", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-09T11:16:20.935811Z"}
+INFO:     127.0.0.1:44626 - "POST /api/v1/generate/manual HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'app/schemas/test.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T11:18:27.000259Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33477]
+INFO:     Started server process [34607]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T11:18:31.470708Z"}
+INFO:     Application startup complete.
+{"error": "Error 111 connecting to localhost:6379. 111.", "event": "Rate limiter error", "logger": "app.core.deps", "level": "error", "timestamp": "2025-12-09T11:18:42.267782Z"}
+{"user": "anonymous", "requirements_length": 44, "event": "Generating manual tests", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-09T11:18:42.347209Z"}
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+{"user": "anonymous", "test_cases_count": 10, "generation_time": 17.750632286071777, "event": "Manual tests generated successfully", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-09T11:19:08.594000Z"}
+INFO:     127.0.0.1:46030 - "POST /api/v1/generate/manual HTTP/1.1" 200 OK
+{"error": "Error 111 connecting to localhost:6379. 111.", "event": "Rate limiter error", "logger": "app.core.deps", "level": "error", "timestamp": "2025-12-09T11:19:37.675118Z"}
+{"user": "anonymous", "requirements_length": 4, "event": "Generating manual tests", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-09T11:19:37.750530Z"}
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://foundation-models.api.cloud.ru/v1/chat/completions "HTTP/1.1 200 OK"
+{"user": "anonymous", "test_cases_count": 5, "generation_time": 12.030741691589355, "event": "Manual tests generated successfully", "logger": "app.api.v1.endpoints.generate", "level": "info", "timestamp": "2025-12-09T11:19:59.363912Z"}
+INFO:     127.0.0.1:41984 - "POST /api/v1/generate/manual HTTP/1.1" 200 OK

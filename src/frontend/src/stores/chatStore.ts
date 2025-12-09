@@ -62,7 +62,9 @@ export const useChatStore = create<ChatState>()(
           })
 
           if (!response.ok) {
-            throw new Error('Failed to generate response')
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+            console.error('API Error:', response.status, errorData)
+            throw new Error(`Failed to generate response: ${response.status} ${JSON.stringify(errorData)}`)
           }
 
           const data = await response.json()
