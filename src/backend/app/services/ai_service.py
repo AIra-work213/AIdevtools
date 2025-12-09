@@ -396,40 +396,55 @@ Return ONLY the Python code, no explanations."""
         code: str,
         standards: List[str] = None
     ) -> Dict[str, Any]:
-        """Validate Python code against testing standards"""
-        validation_prompt = f"""
-        Analyze the following Python test code and validate it against testing standards:
-
-        Code:
-        ```python
-        {code}
-        ```
-
-        Standards to check:
-        {', '.join(standards or ['allure'])}
-
-        Provide:
-        1. Syntax validation
-        2. Structure validation
-        3. Best practices check
-        4. Specific standards compliance
-        5. Suggestions for improvement
-        """
-
+        """Validate Python code against testing standards - Fast syntax-only check"""
+        errors = []
+        warnings = []
+        suggestions = []
+        
         try:
-            response = await self.llm_client.chat_completion(
-                messages=[
-                    {"role": "system", "content": "You are a Python code review expert specializing in test automation."},
-                    {"role": "user", "content": validation_prompt}
-                ]
-            )
-
-            # Parse validation results
-            return self._parse_validation_response(response)
-
+            # Quick syntax check using compile
+            compile(code, '<string>', 'exec')
+            
+            # Basic pattern checks
+            if '@allure.feature' not in code:
+                warnings.append("Missing @allure.feature decorator")
+            if '@allure.story' not in code:
+                warnings.append("Missing @allure.story decorator")
+            if 'def test_' not in code:
+                errors.append("No test methods found")
+            if 'import allure' not in code:
+                errors.append("Missing allure import")
+            
+            # Check for best practices
+            if 'allure.step' not in code:
+                suggestions.append("Consider using allure.step for better reporting")
+            if '@allure.severity' not in code:
+                suggestions.append("Add @allure.severity decorators to tests")
+                
+            is_valid = len(errors) == 0
+            
+            return {
+                "is_valid": is_valid,
+                "errors": errors,
+                "warnings": warnings,
+                "suggestions": suggestions
+            }
+            
+        except SyntaxError as e:
+            return {
+                "is_valid": False,
+                "errors": [f"Syntax error at line {e.lineno}: {e.msg}"],
+                "warnings": warnings,
+                "suggestions": suggestions
+            }
         except Exception as e:
             self.logger.error("Code validation failed", error=str(e))
-            raise
+            return {
+                "is_valid": False,
+                "errors": [str(e)],
+                "warnings": [],
+                "suggestions": []
+            }
 
     async def _generate_python_code_from_structure(
         self,
@@ -491,8 +506,8 @@ class Test{class_name}:
         import re
         test_cases = []
         
-        # Find all test methods
-        pattern = r'@allure\.title\("([^"]+)"\)[\s\S]*?@allure\.severity\(Severity\.(\w+)\)[\s\S]*?def (test_\w+)\(self\):\s*"""([^"]*?)"""'
+        # Find all test methods with details
+        pattern = r'@allure\.title\("([^"]+)"\)[\s\S]*?@allure\.severity\(Severity\.(\w+)\)[\s\S]*?def (test_\w+)\(self\):\s*"""([^"]*?)"""([\s\S]*?)(?=\n    @allure\.title|class |$)'
         matches = re.finditer(pattern, code)
         
         for match in matches:
@@ -500,12 +515,31 @@ class Test{class_name}:
             severity = match.group(2).lower()
             method_name = match.group(3)
             description = match.group(4).strip()
+            method_body = match.group(5) if len(match.groups()) > 4 else ""
+            
+            # Extract steps from allure.step calls
+            steps = []
+            step_pattern = r'with allure\.step\("([^"]+)"\):'
+            step_matches = re.findall(step_pattern, method_body)
+            steps = step_matches if step_matches else ["Execute test steps"]
+            
+            # Find expected result (usually the last step or assertion step)
+            expected_result = "Test passes successfully"
+            if steps:
+                # Look for Assert step
+                assert_steps = [s for s in steps if 'assert' in s.lower() or 'проверк' in s.lower()]
+                if assert_steps:
+                    expected_result = assert_steps[-1]
+                else:
+                    expected_result = steps[-1]
             
             test_cases.append({
                 "title": title,
                 "priority": severity,
                 "description": description,
-                "method_name": method_name
+                "method_name": method_name,
+                "steps": steps,
+                "expected_result": expected_result
             })
         
         # Fallback: count def test_ methods if regex didn't work
@@ -515,7 +549,9 @@ class Test{class_name}:
                 test_cases.append({
                     "title": method.replace('_', ' ').title(),
                     "priority": "normal",
-                    "method_name": method
+                    "method_name": method,
+                    "steps": ["Execute test"],
+                    "expected_result": "Test passes"
                 })
         
         return test_cases
