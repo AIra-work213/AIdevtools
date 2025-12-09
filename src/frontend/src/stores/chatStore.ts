@@ -46,17 +46,6 @@ export const useChatStore = create<ChatState>()(
           }
           get().appendMessage(userMessage)
 
-          // Prepare request data
-          const formData = new FormData()
-          formData.append('requirements', content)
-
-          if (file) {
-            // For now, we'll just send the file name
-            // TODO: Implement proper file handling
-            const fileContent = await file.text()
-            formData.append('file', fileContent)
-          }
-
           // Call API
           const response = await fetch('/api/v1/generate/manual', {
             method: 'POST',
