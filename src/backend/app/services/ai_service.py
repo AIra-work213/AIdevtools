@@ -262,6 +262,45 @@ class AIService(LoggerMixin):
         self.llm_client = CloudEvolutionClient()
         self._logger = logger.bind(service="AIService")
 
+    async def generate_code(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.3,
+        max_tokens: int = 2000
+    ) -> str:
+        """
+        Generate code using LLM chat completion
+        
+        Args:
+            messages: List of message dicts with 'role' and 'content'
+            temperature: Sampling temperature (0.0-1.0)
+            max_tokens: Maximum tokens to generate
+            
+        Returns:
+            Generated code as string
+        """
+        try:
+            code = await self.llm_client.chat_completion(
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            # Clean up code if wrapped in markdown
+            if isinstance(code, str):
+                code = code.strip()
+                # Remove markdown code blocks if present
+                if "```python" in code:
+                    code = code.split("```python")[1].split("```")[0].strip()
+                elif "```" in code:
+                    code = code.split("```")[1].split("```")[0].strip()
+            
+            return code
+            
+        except Exception as e:
+            self.logger.error("Failed to generate code", error=str(e))
+            raise
+
     async def generate_manual_tests(
         self,
         requirements: str,

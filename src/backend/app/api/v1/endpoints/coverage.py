@@ -197,29 +197,17 @@ Project Context:
 {request.project_context}
 """
 
-            # Generate test code using chat_completion
+            # Generate test code using generate_code method
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ]
             
-            test_code = await ai_service.chat_completion(
+            test_code = await ai_service.generate_code(
                 messages=messages,
                 max_tokens=request.generation_settings.max_tokens if request.generation_settings else 2000,
                 temperature=request.generation_settings.temperature if request.generation_settings else 0.3
             )
-
-            # Clean up test code (remove markdown code blocks if present)
-            if isinstance(test_code, str):
-                test_code = test_code.strip()
-                if test_code.startswith("```"):
-                    # Remove markdown code blocks
-                    lines = test_code.split("\n")
-                    if lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines and lines[-1].startswith("```"):
-                        lines = lines[:-1]
-                    test_code = "\n".join(lines)
 
             # Validate generated test
             validation_result = await validation_service.validate_structure(
