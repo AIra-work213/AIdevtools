@@ -128,9 +128,18 @@ class CloudEvolutionClient:
                 "messages": messages,
                 "max_tokens": max_tokens or settings.MAX_TOKENS_GENERATION,
                 "temperature": temperature or settings.TEMPERATURE_GENERATION,
-                "presence_penalty": 0,
                 "top_p": settings.TOP_P_GENERATION
             }
+
+            # Log request details
+            self.logger.info(
+                "Sending request to Cloud API",
+                model=self.model,
+                messages_count=len(messages),
+                max_tokens=params["max_tokens"],
+                temperature=params["temperature"],
+                has_schema=response_schema is not None
+            )
 
             if response_schema:
                 # Modify the last message to include schema guidance
@@ -143,6 +152,15 @@ class CloudEvolutionClient:
                 messages[-1] = schema_guided_message
 
             response = await self.client.chat.completions.create(**params)
+            
+            # Log successful response
+            self.logger.info(
+                "Cloud API response received",
+                finish_reason=response.choices[0].finish_reason if response.choices else None,
+                usage_prompt_tokens=response.usage.prompt_tokens if response.usage else None,
+                usage_completion_tokens=response.usage.completion_tokens if response.usage else None
+            )
+            
             content = response.choices[0].message.content
 
             # Parse JSON if schema was provided
@@ -165,7 +183,24 @@ class CloudEvolutionClient:
             return content
 
         except Exception as e:
-            self.logger.error("Cloud API request failed", error=str(e))
+            # Enhanced error logging with more details
+            error_details = {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "model": self.model,
+                "messages_count": len(messages) if messages else 0
+            }
+            
+            # Try to extract more details from OpenAI error
+            if hasattr(e, 'response'):
+                error_details["status_code"] = getattr(e.response, 'status_code', None)
+                error_details["response_text"] = getattr(e.response, 'text', None)
+            if hasattr(e, 'status_code'):
+                error_details["status_code"] = e.status_code
+            if hasattr(e, 'body'):
+                error_details["error_body"] = e.body
+                
+            self.logger.error("Cloud API request failed", **error_details)
             raise
 
 
@@ -215,6 +250,15 @@ class AIService(LoggerMixin):
         """
 
         try:
+            # Log the request being sent
+            self.logger.info(
+                "Generating manual tests",
+                requirements_length=len(requirements),
+                has_metadata=metadata is not None,
+                system_prompt_length=len(system_prompt),
+                user_prompt_length=len(user_prompt)
+            )
+            
             # Use schema-guided reasoning for structured output
             result = await self.llm_client.chat_completion(
                 messages=[
