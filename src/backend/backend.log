@@ -331,3 +331,19 @@ INFO:     Started server process [74611]
 INFO:     Waiting for application startup.
 {"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:54:06.301764Z"}
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/services/ai_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:54:38.691019Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [74611]
+INFO:     Started server process [74978]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:54:46.821327Z"}
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:57:24.358109Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [74978]
+INFO:     Stopping reloader process [27575]

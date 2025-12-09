@@ -119,102 +119,140 @@ class CloudEvolutionClient:
         max_tokens: int = None,
         temperature: float = None,
         response_schema: Optional[Dict[str, Any]] = None,
-        stream: bool = False
+        stream: bool = False,
+        max_retries: int = 3
     ) -> Union[str, Dict[str, Any]]:
-        """Send chat completion request with optional schema guidance"""
-        try:
-            params = {
-                "model": self.model,
-                "messages": messages,
-                "max_tokens": max_tokens or settings.MAX_TOKENS_GENERATION,
-                "temperature": temperature or settings.TEMPERATURE_GENERATION,
-                "presence_penalty": 0,
-                "top_p": settings.TOP_P_GENERATION
-            }
-
-            # Log request details
-            self.logger.info(
-                "Sending request to Cloud API",
-                model=self.model,
-                messages_count=len(messages),
-                max_tokens=params["max_tokens"],
-                temperature=params["temperature"],
-                has_schema=response_schema is not None
+        """Send chat completion request with optional schema guidance and automatic retry on invalid responses"""
+        
+        params = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens or settings.MAX_TOKENS_GENERATION,
+            "temperature": temperature or settings.TEMPERATURE_GENERATION,
+            "presence_penalty": 0,
+            "top_p": settings.TOP_P_GENERATION
+        }
+        
+        if response_schema:
+            # Modify the last message to include schema guidance
+            schema_guided_message = messages[-1].copy()
+            schema_guided_message["content"] = SchemaGuidedPrompt.build_prompt_with_schema(
+                messages[0]["content"] if messages else "",
+                messages[-1]["content"],
+                response_schema
             )
-
-            if response_schema:
-                # Modify the last message to include schema guidance
-                schema_guided_message = messages[-1].copy()
-                schema_guided_message["content"] = SchemaGuidedPrompt.build_prompt_with_schema(
-                    messages[0]["content"] if messages else "",
-                    messages[-1]["content"],
-                    response_schema
+            messages[-1] = schema_guided_message
+        
+        # Retry loop for handling invalid responses
+        for attempt in range(max_retries):
+            try:
+                # Log request details
+                self.logger.info(
+                    "Sending request to Cloud API",
+                    model=self.model,
+                    messages_count=len(messages),
+                    max_tokens=params["max_tokens"],
+                    temperature=params["temperature"],
+                    has_schema=response_schema is not None,
+                    attempt=attempt + 1,
+                    max_attempts=max_retries
                 )
-                messages[-1] = schema_guided_message
 
-            response = await self.client.chat.completions.create(**params)
-            
-            # Check if response has choices
-            if not response.choices:
-                self.logger.error("Cloud API returned empty choices")
-                raise ValueError("Empty response from Cloud API")
-            
-            content = response.choices[0].message.content
-            
-            # Log successful response with content preview
-            self.logger.info(
-                "Cloud API response received",
-                finish_reason=response.choices[0].finish_reason,
-                usage_prompt_tokens=response.usage.prompt_tokens if response.usage else None,
-                usage_completion_tokens=response.usage.completion_tokens if response.usage else None,
-                content_length=len(content) if content else 0,
-                content_preview=(content[:100] if content else "EMPTY")
-            )
-            
-            # Validate content is not empty
-            if not content or not content.strip():
-                self.logger.error("Cloud API returned empty content")
-                raise ValueError("Empty content from Cloud API")
-
-            # Parse JSON if schema was provided
-            if response_schema:
-                try:
-                    # Extract JSON from response (in case there's extra text)
-                    start = content.find('{')
-                    end = content.rfind('}') + 1
-                    if start != -1 and end != 0:
-                        json_content = content[start:end]
-                        return json.loads(json_content)
-                    else:
-                        self.logger.warning("No JSON found in schema-guided response")
-                        return content
-                except json.JSONDecodeError as e:
-                    self.logger.error("Failed to parse JSON response", error=str(e), content_sample=content[:200])
-                    # Fallback to raw content
-                    return content
-
-            return content
-
-        except Exception as e:
-            # Enhanced error logging with more details
-            error_details = {
-                "error_type": type(e).__name__,
-                "error_message": str(e),
-                "model": self.model,
-                "messages_count": len(messages) if messages else 0
-            }
-            
-            # Try to extract more details from OpenAI error
-            if hasattr(e, 'response'):
-                error_details["status_code"] = getattr(e.response, 'status_code', None)
-                error_details["response_text"] = getattr(e.response, 'text', None)
-            if hasattr(e, 'status_code'):
-                error_details["status_code"] = e.status_code
-            if hasattr(e, 'body'):
-                error_details["error_body"] = e.body
+                response = await self.client.chat.completions.create(**params)
                 
-            self.logger.error("Cloud API request failed", **error_details)
-            raise
+                # Check if response has choices
+                if not response.choices:
+                    self.logger.error("Cloud API returned empty choices", attempt=attempt + 1)
+                    raise ValueError("Empty response from Cloud API")
+                
+                content = response.choices[0].message.content
+                
+                # Log successful response with content preview
+                self.logger.info(
+                    "Cloud API response received",
+                    finish_reason=response.choices[0].finish_reason,
+                    usage_prompt_tokens=response.usage.prompt_tokens if response.usage else None,
+                    usage_completion_tokens=response.usage.completion_tokens if response.usage else None,
+                    content_length=len(content) if content else 0,
+                    content_preview=(content[:100] if content else "EMPTY"),
+                    attempt=attempt + 1
+                )
+                
+                # Validate content is not empty
+                if not content or not content.strip():
+                    self.logger.error("Cloud API returned empty content", attempt=attempt + 1)
+                    raise ValueError("Empty content from Cloud API")
+
+                # Parse JSON if schema was provided
+                if response_schema:
+                    try:
+                        # Extract JSON from response (in case there's extra text)
+                        start = content.find('{')
+                        end = content.rfind('}') + 1
+                        if start != -1 and end != 0:
+                            json_content = content[start:end]
+                            parsed_json = json.loads(json_content)
+                            self.logger.info("Successfully parsed JSON response", attempt=attempt + 1)
+                            return parsed_json
+                        else:
+                            self.logger.warning("No JSON found in schema-guided response", attempt=attempt + 1)
+                            if attempt < max_retries - 1:
+                                self.logger.info("Retrying due to invalid JSON format")
+                                continue
+                            return content
+                    except json.JSONDecodeError as e:
+                        self.logger.error(
+                            "Failed to parse JSON response", 
+                            error=str(e), 
+                            content_sample=content[:200],
+                            attempt=attempt + 1
+                        )
+                        if attempt < max_retries - 1:
+                            self.logger.info("Retrying due to JSON parse error")
+                            continue
+                        # Last attempt - fallback to raw content
+                        return content
+
+                # Success - return content
+                return content
+
+            except ValueError as e:
+                # Empty response errors - retry
+                if attempt < max_retries - 1:
+                    self.logger.warning(
+                        "Retrying due to empty response",
+                        attempt=attempt + 1,
+                        error=str(e)
+                    )
+                    continue
+                else:
+                    # Last attempt failed
+                    self.logger.error("All retry attempts exhausted for empty response")
+                    raise
+                    
+            except Exception as e:
+                # Enhanced error logging with more details
+                error_details = {
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "model": self.model,
+                    "messages_count": len(messages) if messages else 0,
+                    "attempt": attempt + 1
+                }
+                
+                # Try to extract more details from OpenAI error
+                if hasattr(e, 'response'):
+                    error_details["status_code"] = getattr(e.response, 'status_code', None)
+                    error_details["response_text"] = getattr(e.response, 'text', None)
+                if hasattr(e, 'status_code'):
+                    error_details["status_code"] = e.status_code
+                if hasattr(e, 'body'):
+                    error_details["error_body"] = e.body
+                    
+                self.logger.error("Cloud API request failed", **error_details)
+                
+                # Don't retry on non-retryable errors
+                raise
 
 
 class AIService(LoggerMixin):
