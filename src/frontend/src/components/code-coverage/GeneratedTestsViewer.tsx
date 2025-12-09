@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClipboardIcon, CheckIcon, CodeBracketIcon, DownloadIcon } from '@heroicons/react/24/outline';
+import { ClipboardIcon, CheckIcon, CodeBracketIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { useCoverageStore } from '@/stores/coverageStore';
 import Editor from '@monaco-editor/react';
 
@@ -50,7 +50,7 @@ const GeneratedTestsViewer: React.FC = () => {
           onClick={handleDownloadAllTests}
           className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center"
         >
-          <DownloadIcon className="h-5 w-5 mr-2" />
+          <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
           Download All
         </button>
       </div>
@@ -101,7 +101,7 @@ const GeneratedTestsViewer: React.FC = () => {
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                     title="Download test"
                   >
-                    <DownloadIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <ArrowDownTrayIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
               </div>
@@ -138,7 +138,7 @@ const GeneratedTestsViewer: React.FC = () => {
                     onClick={() => handleDownloadTest(selectedTest, generatedTests[selectedTest])}
                     className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center"
                   >
-                    <DownloadIcon className="h-4 w-4 mr-1" />
+                    <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                     Download
                   </button>
                 </div>
