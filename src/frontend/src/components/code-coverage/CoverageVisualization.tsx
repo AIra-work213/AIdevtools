@@ -31,14 +31,14 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-        Coverage Breakdown
+        Детализация покрытия
       </h2>
 
       {/* Overall Progress Bar */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Overall Coverage
+            Общее покрытие
           </span>
           <span className={`text-sm font-bold ${getCoverageColor(analysis.overall_coverage)}`}>
             {analysis.overall_coverage.toFixed(1)}%
@@ -63,7 +63,7 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
             {fullyCoveredFiles}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Fully Covered Files
+            Полностью покрытых файлов
           </div>
         </div>
         <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -72,7 +72,7 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
             {partiallyCoveredFiles}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Partially Covered Files
+            Частично покрытых файлов
           </div>
         </div>
         <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -81,7 +81,7 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
             {uncoveredFiles}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Uncovered Files
+            Непокрытых файлов
           </div>
         </div>
       </div>
@@ -89,7 +89,7 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
       {/* File Coverage List */}
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-          File Coverage Details
+          Детали покрытия файлов
         </h3>
         <div className="space-y-3">
           {Object.entries(analysis.file_coverage).map(([filePath, metrics]) => (
@@ -102,7 +102,7 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
                   {filePath}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {metrics.functions_covered}/{metrics.functions_total} functions
+                  {metrics.functions_covered}/{metrics.functions_total} функций
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -130,7 +130,7 @@ const CoverageVisualization: React.FC<CoverageVisualizationProps> = ({ analysis 
       {analysis.suggestions.length > 0 && (
         <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-3">
-            Suggestions for Improvement
+            Рекомендации по улучшению
           </h3>
           <ul className="space-y-2">
             {analysis.suggestions.map((suggestion, index) => (

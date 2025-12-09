@@ -59,18 +59,18 @@ const UncoveredFunctionsList: React.FC<UncoveredFunctionsListProps> = ({ functio
 
   const getComplexityBadge = (complexity: number) => {
     if (complexity >= 5) {
-      return <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded">Complex</span>;
+      return <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded">Сложная</span>;
     } else if (complexity >= 3) {
-      return <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded">Moderate</span>;
+      return <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 rounded">Средняя</span>;
     }
-    return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded">Simple</span>;
+    return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded">Простая</span>;
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Uncovered Functions ({filteredFunctions.length})
+          Непокрытые функции ({filteredFunctions.length})
         </h2>
 
         <div className="flex items-center space-x-4">
@@ -80,10 +80,10 @@ const UncoveredFunctionsList: React.FC<UncoveredFunctionsListProps> = ({ functio
             onChange={(e) => setFilter(e.target.value as 'all' | 'high' | 'medium' | 'low')}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
           >
-            <option value="all">All Priorities</option>
-            <option value="high">High Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="low">Low Priority</option>
+            <option value="all">Все приоритеты</option>
+            <option value="high">Высокий приоритет</option>
+            <option value="medium">Средний приоритет</option>
+            <option value="low">Низкий приоритет</option>
           </select>
 
           {/* Generate Tests Button */}
@@ -93,7 +93,7 @@ const UncoveredFunctionsList: React.FC<UncoveredFunctionsListProps> = ({ functio
             className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center"
           >
             <SparklesIcon className="h-5 w-5 mr-2" />
-            {isGenerating ? 'Generating...' : `Generate Tests (${selectedFunctions.length})`}
+            {isGenerating ? 'Генерация...' : `Сгенерировать тесты (${selectedFunctions.length})`}
           </button>
         </div>
       </div>
@@ -108,7 +108,7 @@ const UncoveredFunctionsList: React.FC<UncoveredFunctionsListProps> = ({ functio
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-            Select all ({selectedFunctions.length} selected)
+            Выбрать все (выбрано: {selectedFunctions.length})
           </span>
         </label>
       </div>
@@ -152,13 +152,13 @@ const UncoveredFunctionsList: React.FC<UncoveredFunctionsListProps> = ({ functio
 
                 <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                   <span>
-                    File: <span className="font-medium">{func.file_path}</span>
+                    Файл: <span className="font-medium">{func.file_path}</span>
                   </span>
                   <span>
-                    Line: <span className="font-medium">{func.line_start}-{func.line_end}</span>
+                    Строка: <span className="font-medium">{func.line_start}-{func.line_end}</span>
                   </span>
                   <span>
-                    Complexity: <span className="font-medium">{func.complexity}</span>
+                    Сложность: <span className="font-medium">{func.complexity}</span>
                   </span>
                 </div>
               </div>
@@ -170,7 +170,7 @@ const UncoveredFunctionsList: React.FC<UncoveredFunctionsListProps> = ({ functio
           <div className="text-center py-8">
             <CheckCircleIcon className="mx-auto h-12 w-12 text-green-500 mb-4" />
             <p className="text-gray-600 dark:text-gray-400">
-              {filter === 'all' ? 'All functions are covered by tests!' : `No ${filter} priority functions found`}
+              {filter === 'all' ? 'Все функции покрыты тестами!' : `Функций с приоритетом ${filter === 'high' ? 'высокий' : filter === 'medium' ? 'средний' : 'низкий'} не найдено`}
             </p>
           </div>
         )}

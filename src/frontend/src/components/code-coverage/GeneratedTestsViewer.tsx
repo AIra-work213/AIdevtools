@@ -44,14 +44,14 @@ const GeneratedTestsViewer: React.FC = () => {
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Generated Tests ({Object.keys(generatedTests).length})
+          Сгенерированные тесты ({Object.keys(generatedTests).length})
         </h2>
         <button
           onClick={handleDownloadAllTests}
           className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center"
         >
           <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-          Download All
+          Скачать все
         </button>
       </div>
 
@@ -59,7 +59,7 @@ const GeneratedTestsViewer: React.FC = () => {
         {/* Test List */}
         <div className="lg:col-span-1 space-y-2">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Test Files
+            Тестовые файлы
           </h3>
           {Object.entries(generatedTests).map(([testName, testCode]) => (
             <div
@@ -85,7 +85,7 @@ const GeneratedTestsViewer: React.FC = () => {
                       handleCopyTest(testName, testCode);
                     }}
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                    title="Copy test"
+                    title="Скопировать тест"
                   >
                     {copiedTest === testName ? (
                       <CheckIcon className="h-4 w-4 text-green-500" />
@@ -99,7 +99,7 @@ const GeneratedTestsViewer: React.FC = () => {
                       handleDownloadTest(testName, testCode);
                     }}
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                    title="Download test"
+                    title="Скачать тест"
                   >
                     <ArrowDownTrayIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </button>
@@ -125,12 +125,12 @@ const GeneratedTestsViewer: React.FC = () => {
                     {copiedTest === selectedTest ? (
                       <>
                         <CheckIcon className="h-4 w-4 mr-1 text-green-500" />
-                        Copied!
+                        Скопировано!
                       </>
                     ) : (
                       <>
                         <ClipboardIcon className="h-4 w-4 mr-1" />
-                        Copy
+                        Копировать
                       </>
                     )}
                   </button>
@@ -139,7 +139,7 @@ const GeneratedTestsViewer: React.FC = () => {
                     className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center"
                   >
                     <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
-                    Download
+                    Скачать
                   </button>
                 </div>
               </div>
@@ -162,7 +162,7 @@ const GeneratedTestsViewer: React.FC = () => {
           ) : (
             <div className="flex items-center justify-center h-96 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <p className="text-gray-500 dark:text-gray-400">
-                Select a test file to view its content
+                Выберите тестовый файл для просмотра содержимого
               </p>
             </div>
           )}
@@ -172,13 +172,13 @@ const GeneratedTestsViewer: React.FC = () => {
       {/* Usage Instructions */}
       <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
         <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-          How to use these tests:
+          Как использовать эти тесты:
         </h3>
         <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-          <li>• Save the test files in your project's test directory</li>
-          <li>• Make sure all dependencies are installed</li>
-          <li>• Run tests using pytest (e.g., <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">pytest</code>)</li>
-          <li>• Review and customize tests as needed for your specific use cases</li>
+          <li>• Сохраните тестовые файлы в директорию тестов вашего проекта</li>
+          <li>• Убедитесь, что все зависимости установлены</li>
+          <li>• Запустите тесты с помощью pytest (например, <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">pytest</code>)</li>
+          <li>• Проверьте и адаптируйте тесты под ваши конкретные задачи</li>
         </ul>
       </div>
     </div>

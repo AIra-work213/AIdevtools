@@ -45,17 +45,17 @@ const Coverage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Code Coverage Analysis
+          Анализ покрытия кода
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Analyze your code coverage and generate missing tests
+          Анализируйте покрытие кода и генерируйте недостающие тесты
         </p>
       </div>
 
       {/* Upload Section */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Upload Your Code
+          Загрузите ваш код
         </h2>
 
         {/* Upload Method Selector */}
@@ -69,7 +69,7 @@ const Coverage: React.FC = () => {
             }`}
           >
             <CloudArrowUpIcon className="inline-block w-5 h-5 mr-2" />
-            Files
+            Файлы
           </button>
           <button
             onClick={() => setUploadMethod('github')}
@@ -102,10 +102,10 @@ const Coverage: React.FC = () => {
               <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <label htmlFor="file-upload" className="cursor-pointer">
                 <span className="text-gray-900 dark:text-white font-medium">
-                  Click to upload files
+                  Нажмите для загрузки файлов
                 </span>
                 <span className="text-gray-500 dark:text-gray-400">
-                  {' '}or drag and drop
+                  {' '}или перетащите их сюда
                 </span>
                 <input
                   ref={fileInputRef}
@@ -118,11 +118,11 @@ const Coverage: React.FC = () => {
                 />
               </label>
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-                Python, JavaScript, TypeScript, Java, C# files
+                Файлы Python, JavaScript, TypeScript, Java, C#
               </p>
               {selectedFiles.length > 0 && (
                 <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                  {selectedFiles.length} file(s) selected
+                  Выбрано файлов: {selectedFiles.length}
                 </div>
               )}
             </div>
@@ -132,7 +132,7 @@ const Coverage: React.FC = () => {
         {(uploadMethod === 'github' || uploadMethod === 'gitlab') && (
           <div>
             <label htmlFor="repo-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Repository URL
+              URL репозитория
             </label>
             <input
               type="text"
@@ -156,7 +156,7 @@ const Coverage: React.FC = () => {
           disabled={isAnalyzing || (uploadMethod === 'file' && selectedFiles.length === 0) || ((uploadMethod === 'github' || uploadMethod === 'gitlab') && !repoUrl)}
           className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          {isAnalyzing ? 'Analyzing...' : 'Analyze Coverage'}
+          {isAnalyzing ? 'Анализ...' : 'Анализировать покрытие'}
         </button>
       </div>
 
@@ -166,22 +166,22 @@ const Coverage: React.FC = () => {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Overall Coverage</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Общее покрытие</h3>
               <p className={`text-3xl font-bold ${useCoverageStore.getState().getCoverageColor(analysis.overall_coverage)}`}>
                 {analysis.overall_coverage.toFixed(1)}%
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Files Analyzed</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Проанализировано файлов</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
                 {analysis.total_files}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {analysis.test_files} test files
+                {analysis.test_files} тестовых файлов
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Uncovered Functions</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Непокрытых функций</h3>
               <p className="text-3xl font-bold text-red-600">
                 {analysis.uncovered_functions.length}
               </p>
@@ -198,14 +198,14 @@ const Coverage: React.FC = () => {
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               <DocumentArrowDownIcon className="inline-block w-5 h-5 mr-2" />
-              Export JSON
+              Экспорт JSON
             </button>
             <button
               onClick={() => exportReport('html')}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               <DocumentArrowDownIcon className="inline-block w-5 h-5 mr-2" />
-              Export HTML
+              Экспорт HTML
             </button>
           </div>
 
