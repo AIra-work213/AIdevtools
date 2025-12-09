@@ -57,9 +57,10 @@ async def generate_manual_tests(
             metadata=request.metadata
         )
 
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.info(
             "Manual tests generated successfully",
-            user=current_user["username"],
+            user=username,
             test_cases_count=len(result["test_cases"]),
             generation_time=result["generation_time"]
         )
@@ -67,9 +68,10 @@ async def generate_manual_tests(
         return response
 
     except Exception as e:
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.error(
             "Failed to generate manual tests",
-            user=current_user["username"],
+            user=username,
             error=str(e)
         )
         raise HTTPException(
@@ -172,18 +174,20 @@ async def generate_api_tests(
             validation=ValidationResult(**validation)
         )
 
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.info(
             "API tests generated successfully",
-            user=current_user["username"],
+            user=username,
             endpoints_count=len(result["endpoints_covered"])
         )
 
         return response
 
     except Exception as e:
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.error(
             "Failed to generate API tests",
-            user=current_user["username"],
+            user=username,
             error=str(e)
         )
         raise HTTPException(
