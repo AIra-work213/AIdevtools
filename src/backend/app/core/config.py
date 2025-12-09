@@ -16,14 +16,14 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "TestOps Copilot"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str
+    SECRET_KEY: str = "dummy-secret-key-change-in-production"
     ENVIRONMENT: str = "development"
 
     # Database
-    POSTGRES_SERVER: str
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_USER: str = "testops_user"
+    POSTGRES_PASSWORD: str = "testops_password"
+    POSTGRES_DB: str = "testops_db"
     DATABASE_URL: Optional[str] = None
 
     @field_validator("DATABASE_URL", mode="before")
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{user}:{password}@{host}/{db}"
 
     # Cloud.ru API
-    CLOUD_API_KEY: str
+    CLOUD_API_KEY: str = "dummy-cloud-api-key"
     CLOUD_API_URL: str = "https://foundation-models.api.cloud.ru/v1"
     CLOUD_MODEL: str = "openai/gpt-oss-120b"  # Alternative: "Qwen/Qwen3-Coder-480B-A35B-Instruct"
 
@@ -52,8 +52,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
 
     # GitLab
-    GITLAB_URL: str
-    GITLAB_TOKEN: str
+    GITLAB_URL: str = "https://gitlab.example.com"
+    GITLAB_TOKEN: str = "dummy-gitlab-token"
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
