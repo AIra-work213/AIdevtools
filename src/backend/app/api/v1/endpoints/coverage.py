@@ -163,6 +163,9 @@ async def generate_tests_for_coverage(
         
         generated_tests = {}
         total_improvement = 0
+        all_errors = []
+        all_warnings = []
+        all_suggestions = []
 
         # Generate tests for each uncovered function
         for i, func in enumerate(request.uncovered_functions):
@@ -218,18 +221,42 @@ Project Context:
                         lines = lines[:-1]
                     test_code = "\n".join(lines)
 
-            # Store generated test
-            generated_tests[func.name] = test_code
-            # Estimate coverage improvement (simplified)
-            estimated_improvement = 1.0 / (func.complexity + 1)
-            total_improvement += estimated_improvement
+            # Validate generated test
+            validation_result = await validation_service.validate_structure(
+                code=test_code,
+                standards=["pytest"],
+                strict_mode=False
+            )
             
-            logger.info(f"Test generated successfully", 
-                       function_name=func.name,
-                       code_length=len(test_code))
+            # Collect validation results
+            if validation_result.get("errors"):
+                all_errors.extend(validation_result["errors"])
+                logger.warning(f"Validation errors for {func.name}", 
+                             errors=validation_result["errors"])
+            
+            if validation_result.get("warnings"):
+                all_warnings.extend(validation_result["warnings"])
+            
+            if validation_result.get("suggestions"):
+                all_suggestions.extend(validation_result["suggestions"])
+
+            # Store generated test even if there are warnings (but not errors)
+            if not validation_result.get("errors"):
+                generated_tests[func.name] = test_code
+                # Estimate coverage improvement (simplified)
+                estimated_improvement = 1.0 / (func.complexity + 1)
+                total_improvement += estimated_improvement
+                
+                logger.info(f"Test generated and validated successfully", 
+                           function_name=func.name,
+                           code_length=len(test_code),
+                           warnings_count=len(validation_result.get("warnings", [])))
+            else:
+                logger.error(f"Test validation failed for {func.name}", 
+                           errors=validation_result["errors"])
 
         # Calculate validation result
-        is_valid = True  # Simplified - assume all generated tests are valid
+        is_valid = len(all_errors) == 0
         coverage_improvement = min(total_improvement * 100, 100)  # Cap at 100%
 
         # Determine test files created
@@ -237,16 +264,19 @@ Project Context:
 
         logger.info("Test generation complete", 
                    tests_generated=len(generated_tests),
-                   coverage_improvement=coverage_improvement)
+                   coverage_improvement=coverage_improvement,
+                   errors_count=len(all_errors),
+                   warnings_count=len(all_warnings),
+                   suggestions_count=len(all_suggestions))
 
         return GenerateTestsForCoverageResponse(
             generated_tests=generated_tests,
             coverage_improvement=coverage_improvement,
             validation=ValidationResult(
                 is_valid=is_valid,
-                errors=[],
-                warnings=[],
-                suggestions=[]
+                errors=all_errors,
+                warnings=all_warnings,
+                suggestions=all_suggestions
             ),
             test_files_created=test_files_created
         )
