@@ -216,17 +216,27 @@ Project Context:
                 strict_mode=False
             )
             
-            # Collect validation results
+            # Convert validation results to strings (validate_structure returns dicts)
+            def format_validation_item(item):
+                """Convert validation dict to string"""
+                if isinstance(item, dict):
+                    return f"{item.get('type', 'unknown')}: {item.get('message', 'No message')} (line {item.get('line', 'N/A')})"
+                return str(item)
+            
+            # Collect validation results and convert to strings
             if validation_result.get("errors"):
-                all_errors.extend(validation_result["errors"])
+                error_strings = [format_validation_item(e) for e in validation_result["errors"]]
+                all_errors.extend(error_strings)
                 logger.warning(f"Validation errors for {func.name}", 
-                             errors=validation_result["errors"])
+                             errors=error_strings)
             
             if validation_result.get("warnings"):
-                all_warnings.extend(validation_result["warnings"])
+                warning_strings = [format_validation_item(w) for w in validation_result["warnings"]]
+                all_warnings.extend(warning_strings)
             
             if validation_result.get("suggestions"):
-                all_suggestions.extend(validation_result["suggestions"])
+                suggestion_strings = [format_validation_item(s) for s in validation_result["suggestions"]]
+                all_suggestions.extend(suggestion_strings)
 
             # Store generated test even if there are warnings (but not errors)
             if not validation_result.get("errors"):
