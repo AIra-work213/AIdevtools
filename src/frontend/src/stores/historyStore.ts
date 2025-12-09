@@ -95,6 +95,20 @@ export const useHistoryStore = create<HistoryState>()(
       {
         name: 'chat-history',
         partialize: (state) => ({ chatHistory: state.chatHistory }),
+        // Fix date deserialization from localStorage
+        onRehydrateStorage: () => (state) => {
+          if (state?.chatHistory) {
+            state.chatHistory = state.chatHistory.map(chat => ({
+              ...chat,
+              createdAt: new Date(chat.createdAt),
+              updatedAt: new Date(chat.updatedAt),
+              messages: chat.messages.map(msg => ({
+                ...msg,
+                timestamp: new Date(msg.timestamp)
+              }))
+            }))
+          }
+        }
       }
     ),
     {
