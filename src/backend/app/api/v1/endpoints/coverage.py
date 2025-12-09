@@ -3,6 +3,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
+import structlog
 
 from app.schemas.test import (
     UploadedFile,
@@ -17,6 +18,7 @@ from app.services.ai_service import ai_service
 from app.services.validation_service import validation_service
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
 
 
 @router.post("/analyze", response_model=CoverageAnalysisResponse)
@@ -75,12 +77,16 @@ async def upload_from_github(
     Upload and analyze code from GitHub repository
     """
     try:
+        logger.info("Starting GitHub upload", repo_url=repo_url, language=language, framework=framework)
+        
         # Download repository
         files = await uploader_service.upload_from_github(repo_url)
+        logger.info("Repository uploaded", file_count=len(files))
 
         # Separate test files
         source_files = [f for f in files if not f.is_test_file]
         test_files = [f for f in files if f.is_test_file]
+        logger.info("Files separated", source_files=len(source_files), test_files=len(test_files))
 
         # Create analysis request
         request = CoverageAnalysisRequest(
@@ -91,12 +97,19 @@ async def upload_from_github(
             include_suggestions=True
         )
 
+        logger.info("Starting coverage analysis")
         # Perform coverage analysis
         result = await coverage_service.analyze_coverage(request)
+        logger.info("Coverage analysis complete", overall_coverage=result.overall_coverage)
 
         return result
 
     except Exception as e:
+        logger.error("Failed to process GitHub repository", 
+                    repo_url=repo_url, 
+                    error=str(e), 
+                    error_type=type(e).__name__,
+                    exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to process GitHub repository: {str(e)}")
 
 
