@@ -154,15 +154,27 @@ class CloudEvolutionClient:
 
             response = await self.client.chat.completions.create(**params)
             
-            # Log successful response
-            self.logger.info(
-                "Cloud API response received",
-                finish_reason=response.choices[0].finish_reason if response.choices else None,
-                usage_prompt_tokens=response.usage.prompt_tokens if response.usage else None,
-                usage_completion_tokens=response.usage.completion_tokens if response.usage else None
-            )
+            # Check if response has choices
+            if not response.choices:
+                self.logger.error("Cloud API returned empty choices")
+                raise ValueError("Empty response from Cloud API")
             
             content = response.choices[0].message.content
+            
+            # Log successful response with content preview
+            self.logger.info(
+                "Cloud API response received",
+                finish_reason=response.choices[0].finish_reason,
+                usage_prompt_tokens=response.usage.prompt_tokens if response.usage else None,
+                usage_completion_tokens=response.usage.completion_tokens if response.usage else None,
+                content_length=len(content) if content else 0,
+                content_preview=(content[:100] if content else "EMPTY")
+            )
+            
+            # Validate content is not empty
+            if not content or not content.strip():
+                self.logger.error("Cloud API returned empty content")
+                raise ValueError("Empty content from Cloud API")
 
             # Parse JSON if schema was provided
             if response_schema:
@@ -177,7 +189,7 @@ class CloudEvolutionClient:
                         self.logger.warning("No JSON found in schema-guided response")
                         return content
                 except json.JSONDecodeError as e:
-                    self.logger.error("Failed to parse JSON response", error=str(e))
+                    self.logger.error("Failed to parse JSON response", error=str(e), content_sample=content[:200])
                     # Fallback to raw content
                     return content
 
