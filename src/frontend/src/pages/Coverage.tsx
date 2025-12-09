@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { CloudArrowUpIcon, CodeBracketIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { useCoverageStore } from '@/stores/coverageStore';
 import LanguageSelector from '@/components/LanguageSelector';
-import CoverageVisualization from '@/components/coverage/CoverageVisualization';
-import UncoveredFunctionsList from '@/components/coverage/UncoveredFunctionsList';
-import GeneratedTestsViewer from '@/components/coverage/GeneratedTestsViewer';
+// TODO: Create these components
+// import CoverageVisualization from '@/components/coverage/CoverageVisualization';
+// import UncoveredFunctionsList from '@/components/coverage/UncoveredFunctionsList';
+// import GeneratedTestsViewer from '@/components/coverage/GeneratedTestsViewer';
 
 const Coverage: React.FC = () => {
   const {
@@ -189,7 +190,12 @@ const Coverage: React.FC = () => {
           </div>
 
           {/* Coverage Visualization */}
-          <CoverageVisualization analysis={analysis} />
+          <div className="p-6 bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 dark:border-white/10">
+            <h3 className="text-lg font-semibold mb-4">Coverage Visualization</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Coverage visualization component will be added soon.
+            </p>
+          </div>
 
           {/* Export Button */}
           <div className="flex justify-end space-x-4">
@@ -210,13 +216,31 @@ const Coverage: React.FC = () => {
           </div>
 
           {/* Uncovered Functions List */}
-          <UncoveredFunctionsList
-            functions={analysis.uncovered_functions}
-            isGenerating={isGenerating}
-          />
+          <div className="p-6 bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 dark:border-white/10">
+            <h3 className="text-lg font-semibold mb-4">
+              Uncovered Functions ({analysis.uncovered_functions.length})
+            </h3>
+            <div className="space-y-2">
+              {analysis.uncovered_functions.slice(0, 10).map((func, idx) => (
+                <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <code className="text-sm">{func}</code>
+                </div>
+              ))}
+              {analysis.uncovered_functions.length > 10 && (
+                <p className="text-sm text-gray-500">
+                  and {analysis.uncovered_functions.length - 10} more...
+                </p>
+              )}
+            </div>
+          </div>
 
           {/* Generated Tests Viewer */}
-          <GeneratedTestsViewer />
+          <div className="p-6 bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 dark:border-white/10">
+            <h3 className="text-lg font-semibold mb-4">Generated Tests</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Generated tests viewer will be added soon.
+            </p>
+          </div>
         </div>
       )}
     </div>
