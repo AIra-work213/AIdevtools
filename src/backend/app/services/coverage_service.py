@@ -11,6 +11,7 @@ from typing import List, Dict, Tuple, Optional, Set
 import urllib.request
 from git import Repo
 import chardet
+import structlog
 
 from app.schemas.test import (
     UploadedFile,
@@ -21,6 +22,8 @@ from app.schemas.test import (
     GenerateTestsForCoverageRequest,
     GenerateTestsForCoverageResponse
 )
+
+logger = structlog.get_logger(__name__)
 
 
 class CoverageAnalyzer:
@@ -387,28 +390,40 @@ class CodeUploader:
     @staticmethod
     async def upload_from_github(repo_url: str) -> List[UploadedFile]:
         """Clone and upload from GitHub repository"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Clone the repository
-            Repo.clone_from(repo_url, temp_dir)
+        logger.info("Starting GitHub repository clone", repo_url=repo_url)
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                logger.info("Cloning repository", temp_dir=temp_dir)
+                # Clone the repository
+                Repo.clone_from(repo_url, temp_dir)
+                logger.info("Repository cloned successfully")
 
-            files = []
-            for root, dirs, file_names in os.walk(temp_dir):
-                # Skip hidden directories and common non-source directories
-                dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'target', 'bin']]
+                files = []
+                for root, dirs, file_names in os.walk(temp_dir):
+                    # Skip hidden directories and common non-source directories
+                    dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'target', 'bin']]
 
-                for file_name in file_names:
-                    if not file_name.startswith('.'):
-                        file_path = os.path.join(root, file_name)
-                        rel_path = os.path.relpath(file_path, temp_dir)
+                    for file_name in file_names:
+                        if not file_name.startswith('.'):
+                            file_path = os.path.join(root, file_name)
+                            rel_path = os.path.relpath(file_path, temp_dir)
 
-                        with open(file_path, 'rb') as f:
-                            content = f.read()
+                            try:
+                                with open(file_path, 'rb') as f:
+                                    content = f.read()
 
-                        is_test = 'test' in file_name.lower() or 'spec' in file_name.lower()
-                        uploaded = await CodeUploader.upload_from_file(content, rel_path, is_test)
-                        files.append(uploaded)
+                                is_test = 'test' in file_name.lower() or 'spec' in file_name.lower()
+                                uploaded = await CodeUploader.upload_from_file(content, rel_path, is_test)
+                                files.append(uploaded)
+                            except Exception as file_error:
+                                logger.warning("Failed to process file", file_path=rel_path, error=str(file_error))
+                                continue
 
-            return files
+                logger.info("Repository processed successfully", file_count=len(files))
+                return files
+        except Exception as e:
+            logger.error("Failed to clone GitHub repository", repo_url=repo_url, error=str(e), error_type=type(e).__name__)
+            raise Exception(f"Failed to analyze GitHub repository: {str(e)}")
 
     @staticmethod
     async def upload_from_gitlab(repo_url: str) -> List[UploadedFile]:
