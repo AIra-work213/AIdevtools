@@ -18,7 +18,7 @@ class GitLabService(LoggerMixin):
             settings.GITLAB_URL,
             private_token=settings.GITLAB_TOKEN
         )
-        self.logger = self.logger.bind(service="GitLabService")
+        self._logger = self.logger.bind(service="GitLabService")
 
     async def get_user_projects(self) -> List[GitLabProject]:
         """
