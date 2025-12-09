@@ -235,3 +235,7 @@ class ValidationService(LoggerMixin):
                 metrics["decorators"] += len(node.decorator_list)
 
         return metrics
+
+
+# Create singleton instance
+validation_service = ValidationService()

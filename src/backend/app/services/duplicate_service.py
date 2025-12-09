@@ -184,3 +184,7 @@ class DuplicateService(LoggerMixin):
             test_cases=similar_tests,
             similarity_score=float(max_similarity)
         )
+
+
+# Create singleton instance
+duplicate_service = DuplicateService()

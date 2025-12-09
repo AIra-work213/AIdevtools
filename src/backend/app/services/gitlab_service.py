@@ -281,3 +281,7 @@ class GitLabService(LoggerMixin):
                 error=str(e)
             )
             raise
+
+
+# Create singleton instance
+gitlab_service = GitLabService()
