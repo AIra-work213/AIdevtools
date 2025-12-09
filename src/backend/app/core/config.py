@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # Cloud.ru API
     CLOUD_API_KEY: str
     CLOUD_API_URL: str = "https://foundation-models.api.cloud.ru/v1"
-    CLOUD_MODEL: str = "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+    CLOUD_MODEL: str = "openai/gpt-oss-120b"  # Alternative: "Qwen/Qwen3-Coder-480B-A35B-Instruct"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
