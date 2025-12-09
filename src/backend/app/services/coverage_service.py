@@ -357,12 +357,21 @@ class CodeUploader:
     """Handles code upload from various sources"""
 
     @staticmethod
-    async def upload_from_file(file_content: str, filename: str, is_test: bool = False) -> UploadedFile:
+    @staticmethod
+    async def upload_from_file(file_content: bytes | str, filename: str, is_test: bool = False) -> UploadedFile:
         """Create UploadedFile from uploaded content"""
-        # Detect encoding
+        # Detect encoding and convert bytes to string
         if isinstance(file_content, bytes):
-            detected = chardet.detect(file_content)
-            file_content = file_content.decode(detected['encoding'] or 'utf-8')
+            try:
+                detected = chardet.detect(file_content)
+                encoding = detected['encoding'] or 'utf-8'
+                file_content = file_content.decode(encoding)
+            except (UnicodeDecodeError, AttributeError) as e:
+                # If decoding fails, try utf-8 with error handling
+                try:
+                    file_content = file_content.decode('utf-8', errors='ignore')
+                except Exception:
+                    raise ValueError(f"Cannot decode file {filename}: {str(e)}")
 
         # Detect language from extension
         ext = Path(filename).suffix.lower()
