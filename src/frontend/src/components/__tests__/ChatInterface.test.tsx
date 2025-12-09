@@ -10,6 +10,18 @@ vi.mock('../../stores/chatStore', () => ({
   useChatStore: vi.fn(),
 }))
 
+vi.mock('../../hooks/useAutoSave', () => ({
+  useAutoSave: () => ({ isSaved: true, lastSave: new Date() })
+}))
+
+vi.mock('../../hooks/useCopyToClipboard', () => ({
+  useCopyToClipboard: () => ({ copiedText: null, copyToClipboard: vi.fn() })
+}))
+
+vi.mock('../../hooks/useHotkeys', () => ({
+  useHotkeys: vi.fn()
+}))
+
 vi.mock('@monaco-editor/react', () => ({
   __esModule: true,
   default: ({ value }: { value: string }) => (

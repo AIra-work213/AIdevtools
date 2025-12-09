@@ -265,29 +265,71 @@ class AIService(LoggerMixin):
     async def generate_manual_tests(
         self,
         requirements: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        generation_settings: Optional[Dict[str, Any]] = None,
+        conversation_history: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """Generate manual tests from requirements - optimized single request"""
         start_time = time.time()
+
+        # Extract settings with defaults
+        settings = generation_settings or {}
+        test_type = settings.get("test_type", "manual")
+        detail_level = settings.get("detail_level", "standard")
+        use_aaa = settings.get("use_aaa_pattern", True)
+        include_negative = settings.get("include_negative_tests", True)
+        temperature = settings.get("temperature", 0.3)
+        max_tokens = settings.get("max_tokens", 16000)
+        language = settings.get("language", "python")
+        framework = settings.get("framework", "pytest")
 
         # Build comprehensive prompt for direct Python code generation
         feature = metadata.get("feature", "User Generated") if metadata else "User Generated"
         owner = metadata.get("owner", "QA Engineer") if metadata else "QA Engineer"
 
-        system_prompt = """You are an expert QA engineer specializing in test automation with pytest and Allure.
-Generate ready-to-use Python test code that follows best practices."""
+        # Build context from conversation history
+        context = ""
+        if conversation_history and len(conversation_history) > 0:
+            context = "\n\nPrevious conversation context:\n"
+            for msg in conversation_history[-5:]:  # Use last 5 messages for context
+                context += f"{msg['type'].upper()}: {msg['content']}\n"
+            context += "\n"
 
-        user_prompt = f"""Generate pytest test code for these requirements:
+        # Build system prompt based on settings
+        system_prompt = f"""You are an expert QA engineer specializing in test automation with {framework} and Allure.
+Generate ready-to-use {language} test code that follows best practices."""
 
+        # Build detailed instructions based on settings
+        instructions = []
+        if detail_level == "minimal":
+            instructions.append("Generate minimal tests with only essential test cases")
+        elif detail_level == "detailed":
+            instructions.append("Generate comprehensive tests with many edge cases and detailed documentation")
+        else:  # standard
+            instructions.append("Generate standard tests covering main scenarios")
+
+        if use_aaa:
+            instructions.append("Use Arrange-Act-Assert pattern in test structure")
+
+        if include_negative:
+            instructions.append("Include negative test scenarios for error handling")
+
+        user_prompt = f"""Generate {framework} test code for these requirements:
+
+{context}
+Current requirements:
 {requirements}
 
-Generate a complete Python test class with:
-1. Import statements (allure, pytest, allure_commons.types.Severity)
+Instructions:
+{chr(10).join(f"- {inst}" for inst in instructions)}
+
+Generate a complete {language} test class with:
+1. Import statements (allure, {framework}, allure_commons.types.Severity)
 2. Class decorated with @allure.feature("{feature}") and @allure.story("Test Scenarios")
 3. Multiple test methods covering:
    - Happy path scenarios
    - Edge cases
-   - Error conditions
+   {"   - Error conditions" if include_negative else ""}
 4. Each test method should have:
    - @allure.title() with clear test name
    - @allure.severity() (NORMAL, HIGH, or CRITICAL)
@@ -299,7 +341,7 @@ Generate a complete Python test class with:
 Example format:
 ```python
 import allure
-import pytest
+import {framework}
 from allure_commons.types import Severity
 
 @allure.feature("{feature}")
@@ -307,21 +349,25 @@ from allure_commons.types import Severity
 @allure.label("owner", "{owner}")
 @allure.tag("generated_by_ai")
 class TestGeneratedScenarios:
-    
+
     @allure.title("Test example scenario")
     @allure.severity(Severity.NORMAL)
     @allure.manual
     def test_example_scenario(self):
         \"\"\"Test description here\"\"\"
-        with allure.step("Step 1: Do something"):
+        {"        # Arrange" if use_aaa else ""}
+        {"        test_data = 'example'" if use_aaa else ""}
+        {"        " if use_aaa else ""}with allure.step("Step 1: Do something"):
             # TODO: Implement step
             pass
-        with allure.step("Assert: Expected result"):
+        {"        # Act" if use_aaa else ""}
+        {"        result = perform_action()" if use_aaa else ""}
+        {"        " if use_aaa else ""}with allure.step("Assert: Expected result"):
             # TODO: Add assertions
             pass
 ```
 
-Return ONLY the Python code, no explanations."""
+Return ONLY the {language} code, no explanations."""
 
         try:
             self.logger.info(
@@ -336,8 +382,8 @@ Return ONLY the Python code, no explanations."""
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.2,  # Lower temperature for more consistent code
-                max_tokens=16000  # Large limit for comprehensive test suites
+                temperature=temperature,  # Use temperature from settings
+                max_tokens=max_tokens  # Use max_tokens from settings
             )
 
             # Clean up code if wrapped in markdown

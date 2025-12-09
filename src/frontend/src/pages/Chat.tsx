@@ -2,11 +2,15 @@ import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { PaperAirplaneIcon, DocumentIcon, CogIcon } from '@heroicons/react/24/outline'
+import { PaperAirplaneIcon, DocumentIcon, CogIcon, BookmarkIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline'
 import { ChatInterface } from '@/components/chat/ChatInterface'
 import { CodeEditor } from '@/components/editor/CodeEditor'
 import { GenerationSettings } from '@/components/chat/GenerationSettings'
 import { useChatStore } from '@/stores/chatStore'
+import { useHistoryStore } from '@/stores/historyStore'
+import { useAutoSave } from '@/hooks/useAutoSave'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
+import { useHotkeys } from '@/hooks/useHotkeys'
 import { toast } from 'react-hot-toast'
 
 const messageSchema = z.object({
@@ -19,10 +23,40 @@ export function Chat() {
   const [generatedCode, setGeneratedCode] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [chatTitle, setChatTitle] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, isLoading, sendMessage, clearChat } = useChatStore()
+  const { messages, isLoading, sendMessage, clearChat, currentResponse } = useChatStore()
+  const { saveChat } = useHistoryStore()
+  const { isSaved } = useAutoSave(30000) // Auto-save every 30 seconds
+  const { copyToClipboard } = useCopyToClipboard()
+
+  // Hotkeys
+  useHotkeys([
+    {
+      key: 'k',
+      ctrl: true,
+      callback: () => clearChat(),
+    },
+    {
+      key: 's',
+      ctrl: true,
+      callback: () => setShowSaveDialog(true),
+    },
+    {
+      key: ',',
+      ctrl: true,
+      callback: () => setShowSettings(true),
+    },
+    {
+      key: 'c',
+      ctrl: true,
+      shift: true,
+      callback: () => currentResponse && copyToClipboard(currentResponse, 'Код скопирован'),
+    },
+  ])
 
   const {
     register,
@@ -36,6 +70,13 @@ export function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Update generated code when current response changes
+  useEffect(() => {
+    if (currentResponse) {
+      setGeneratedCode(currentResponse)
+    }
+  }, [currentResponse])
 
   const onSubmit = async (data: MessageFormData) => {
     try {
@@ -79,6 +120,28 @@ export function Chat() {
     }
   }
 
+  const handleSaveChat = () => {
+    if (!chatTitle.trim()) {
+      toast.error('Введите название диалога')
+      return
+    }
+
+    if (messages.length === 0) {
+      toast.error('Нет сообщений для сохранения')
+      return
+    }
+
+    const metadata = {
+      code: generatedCode,
+      generationSettings: messages.find(m => m.metadata?.generationSettings)?.metadata?.generationSettings
+    }
+
+    saveChat(chatTitle.trim(), messages, metadata)
+    setShowSaveDialog(false)
+    setChatTitle('')
+    toast.success('Диалог сохранен')
+  }
+
   return (
     <div className="flex h-full gap-6">
       {/* Chat Section */}
@@ -91,9 +154,25 @@ export function Chat() {
             </h2>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowSaveDialog(true)}
+                className="btn-ghost p-2"
+                title="Сохранить диалог (Ctrl+S)"
+                disabled={messages.length === 0}
+              >
+                <BookmarkIcon className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => currentResponse && copyToClipboard(currentResponse, 'Код скопирован')}
+                className="btn-ghost p-2"
+                title="Копировать код (Ctrl+Shift+C)"
+                disabled={!currentResponse}
+              >
+                <ClipboardDocumentIcon className="h-5 w-5" />
+              </button>
+              <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="btn-ghost p-2"
-                title="Настройки генерации"
+                title="Настройки генерации (Ctrl+,)"
               >
                 <CogIcon className="h-5 w-5" />
               </button>
@@ -101,9 +180,15 @@ export function Chat() {
                 onClick={clearChat}
                 className="btn-ghost text-sm"
                 disabled={messages.length === 0}
+                title="Очистить чат (Ctrl+K)"
               >
                 Очистить
               </button>
+              {!isSaved && messages.length > 0 && (
+                <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                  • Несохраненные изменения
+                </span>
+              )}
             </div>
           </div>
 
@@ -182,6 +267,61 @@ export function Chat() {
         {/* Settings Panel */}
         {showSettings && (
           <GenerationSettings onClose={() => setShowSettings(false)} />
+        )}
+
+        {/* Save Dialog Modal */}
+        {showSaveDialog && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowSaveDialog(false)} />
+
+              <div className="relative w-full max-w-md transform rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                  Сохранить диалог
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Название диалога
+                    </label>
+                    <input
+                      type="text"
+                      value={chatTitle}
+                      onChange={(e) => setChatTitle(e.target.value)}
+                      placeholder="Введите название..."
+                      className="mt-1 input"
+                      autoFocus
+                      onKeyPress={(e) => e.key === 'Enter' && handleSaveChat()}
+                    />
+                  </div>
+
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Сообщений в диалоге: {messages.length}
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowSaveDialog(false)
+                      setChatTitle('')
+                    }}
+                    className="btn-secondary"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleSaveChat}
+                    disabled={!chatTitle.trim()}
+                    className="btn-primary"
+                  >
+                    Сохранить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

@@ -12,10 +12,33 @@ class TestMetadata(BaseModel):
     tags: List[str] = []
 
 
+class GenerationSettings(BaseModel):
+    """Generation settings for AI"""
+    test_type: str = Field(default="manual", description="Type of tests to generate")
+    detail_level: str = Field(default="standard", description="Level of detail: minimal, standard, detailed")
+    use_aaa_pattern: bool = Field(default=True, description="Use Arrange-Act-Assert pattern")
+    include_negative_tests: bool = Field(default=True, description="Include negative test scenarios")
+    temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0, description="AI model temperature")
+    max_tokens: Optional[int] = Field(default=None, ge=100, le=32000, description="Maximum tokens to generate")
+    language: str = Field(default="python", description="Programming language for tests")
+    framework: str = Field(default="pytest", description="Test framework to use")
+
+
+class ChatMessage(BaseModel):
+    """Chat message"""
+    id: Optional[str] = None
+    type: str  # "user" or "assistant"
+    content: str
+    timestamp: Optional[datetime] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
 class ManualTestRequest(BaseModel):
     """Request for manual test generation"""
     requirements: str = Field(..., min_length=3, max_length=10000)
     metadata: Optional[TestMetadata] = None
+    generation_settings: Optional[GenerationSettings] = None
+    conversation_history: Optional[List[ChatMessage]] = None
 
 
 class TestCase(BaseModel):
@@ -138,15 +161,6 @@ class CreateMRResponse(BaseModel):
     web_url: str
     status: str
     merge_status: str
-
-
-class ChatMessage(BaseModel):
-    """Chat message"""
-    id: Optional[str] = None
-    type: str  # "user" or "assistant"
-    content: str
-    timestamp: Optional[datetime] = None
-    metadata: Optional[Dict[str, Any]] = None
 
 
 class ChatHistory(BaseModel):

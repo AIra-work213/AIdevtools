@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { useSettingsStore } from './settingsStore'
 
 export interface ChatMessage {
   id: string
@@ -10,6 +11,7 @@ export interface ChatMessage {
     code?: string
     testCases?: any[]
     validation?: any
+    generationSettings?: any
   }
 }
 
@@ -18,6 +20,7 @@ interface ChatState {
   isLoading: boolean
   error: string | null
   currentResponse: string
+  sessionId: string
 
   // Actions
   sendMessage: (content: string, file?: File) => Promise<void>
@@ -25,6 +28,7 @@ interface ChatState {
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   appendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
+  regenerateLastResponse: () => Promise<void>
 }
 
 export const useChatStore = create<ChatState>()(
@@ -34,11 +38,14 @@ export const useChatStore = create<ChatState>()(
       isLoading: false,
       error: null,
       currentResponse: '',
+      sessionId: Date.now().toString(),
 
       sendMessage: async (content: string, file?: File) => {
         set({ isLoading: true, error: null, currentResponse: '' })
 
         try {
+          const settings = useSettingsStore.getState().generationSettings
+
           // Add user message
           const userMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
             type: 'user',
@@ -46,7 +53,10 @@ export const useChatStore = create<ChatState>()(
           }
           get().appendMessage(userMessage)
 
-          // Call API
+          // Get conversation history (last 10 messages for context)
+          const conversationHistory = get().messages.slice(-10)
+
+          // Call API with settings and context
           const response = await fetch('/api/v1/generate/manual', {
             method: 'POST',
             headers: {
@@ -58,6 +68,8 @@ export const useChatStore = create<ChatState>()(
                 feature: 'User Generated',
                 owner: 'QA Engineer',
               },
+              generation_settings: settings,
+              conversation_history: conversationHistory,
             }),
           })
 
@@ -77,6 +89,7 @@ export const useChatStore = create<ChatState>()(
               code: data.code,
               testCases: data.test_cases,
               validation: data.validation,
+              generationSettings: settings,
             },
           }
           get().appendMessage(assistantMessage)
@@ -97,8 +110,29 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
+      regenerateLastResponse: async () => {
+        const { messages } = get()
+        if (messages.length < 2) return
+
+        const lastUserMessage = messages[messages.length - 2]
+        if (lastUserMessage.type !== 'user') return
+
+        // Remove last assistant message
+        set((state) => ({
+          messages: state.messages.slice(0, -1),
+        }))
+
+        // Resend with same content
+        get().sendMessage(lastUserMessage.content)
+      },
+
       clearChat: () => {
-        set({ messages: [], currentResponse: '', error: null })
+        set({
+          messages: [],
+          currentResponse: '',
+          error: null,
+          sessionId: Date.now().toString()
+        })
       },
 
       setLoading: (loading: boolean) => {

@@ -1,10 +1,18 @@
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { GenerationSettings } from '@/stores/settingsStore'
 
-interface GenerationSettingsProps {
+interface GenerationSettingsModalProps {
   onClose: () => void
 }
 
-export function GenerationSettings({ onClose }: GenerationSettingsProps) {
+export function GenerationSettings({ onClose }: GenerationSettingsModalProps) {
+  const { generationSettings, updateSettings, resetSettings } = useSettingsStore()
+
+  const handleInputChange = (field: keyof GenerationSettings, value: any) => {
+    updateSettings({ [field]: value })
+  }
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
@@ -27,10 +35,14 @@ export function GenerationSettings({ onClose }: GenerationSettingsProps) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Тип тестов
               </label>
-              <select className="mt-1 input">
-                <option>Ручные тесты</option>
-                <option>API тесты</option>
-                <option>UI/E2E тесты</option>
+              <select
+                className="mt-1 input"
+                value={generationSettings.test_type}
+                onChange={(e) => handleInputChange('test_type', e.target.value)}
+              >
+                <option value="manual">Ручные тесты</option>
+                <option value="api">API тесты</option>
+                <option value="ui">UI/E2E тесты</option>
               </select>
             </div>
 
@@ -38,10 +50,14 @@ export function GenerationSettings({ onClose }: GenerationSettingsProps) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Уровень детализации
               </label>
-              <select className="mt-1 input">
-                <option>Минимальный</option>
-                <option>Стандартный</option>
-                <option>Детальный</option>
+              <select
+                className="mt-1 input"
+                value={generationSettings.detail_level}
+                onChange={(e) => handleInputChange('detail_level', e.target.value)}
+              >
+                <option value="minimal">Минимальный</option>
+                <option value="standard">Стандартный</option>
+                <option value="detailed">Детальный</option>
               </select>
             </div>
 
@@ -51,7 +67,12 @@ export function GenerationSettings({ onClose }: GenerationSettingsProps) {
               </label>
               <div className="mt-2">
                 <label className="inline-flex items-center">
-                  <input type="checkbox" className="form-checkbox" defaultChecked />
+                  <input
+                    type="checkbox"
+                    className="form-checkbox"
+                    checked={generationSettings.use_aaa_pattern}
+                    onChange={(e) => handleInputChange('use_aaa_pattern', e.target.checked)}
+                  />
                   <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     Apply (Arrange) - Act - Assert
                   </span>
@@ -65,18 +86,123 @@ export function GenerationSettings({ onClose }: GenerationSettingsProps) {
               </label>
               <div className="mt-2">
                 <label className="inline-flex items-center">
-                  <input type="checkbox" className="form-checkbox" defaultChecked />
+                  <input
+                    type="checkbox"
+                    className="form-checkbox"
+                    checked={generationSettings.include_negative_tests}
+                    onChange={(e) => handleInputChange('include_negative_tests', e.target.checked)}
+                  />
                   <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     Включать негативные сценарии
                   </span>
                 </label>
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Temperature (креативность): {generationSettings.temperature}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                className="mt-1 w-full"
+                value={generationSettings.temperature}
+                onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value))}
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Точный</span>
+                <span>Креативный</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Max Tokens: {generationSettings.max_tokens}
+              </label>
+              <input
+                type="range"
+                min="1000"
+                max="32000"
+                step="1000"
+                className="mt-1 w-full"
+                value={generationSettings.max_tokens}
+                onChange={(e) => handleInputChange('max_tokens', parseInt(e.target.value))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Язык программирования
+              </label>
+              <select
+                className="mt-1 input"
+                value={generationSettings.language}
+                onChange={(e) => handleInputChange('language', e.target.value)}
+              >
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Фреймворк
+              </label>
+              <select
+                className="mt-1 input"
+                value={generationSettings.framework}
+                onChange={(e) => handleInputChange('framework', e.target.value)}
+                disabled={generationSettings.language !== 'python'}
+              >
+                {generationSettings.language === 'python' && (
+                  <>
+                    <option value="pytest">Pytest</option>
+                    <option value="unittest">Unittest</option>
+                  </>
+                )}
+                {generationSettings.language === 'javascript' && (
+                  <>
+                    <option value="jest">Jest</option>
+                    <option value="mocha">Mocha</option>
+                  </>
+                )}
+                {generationSettings.language === 'typescript' && (
+                  <>
+                    <option value="jest">Jest</option>
+                    <option value="vitest">Vitest</option>
+                  </>
+                )}
+                {generationSettings.language === 'java' && (
+                  <>
+                    <option value="junit">JUnit</option>
+                    <option value="testng">TestNG</option>
+                  </>
+                )}
+                {generationSettings.language === 'csharp' && (
+                  <>
+                    <option value="nunit">NUnit</option>
+                    <option value="xunit">xUnit</option>
+                  </>
+                )}
+              </select>
+            </div>
           </div>
 
           <div className="mt-6 flex justify-end space-x-3">
-            <button onClick={onClose} className="btn-secondary">
-              Отмена
+            <button
+              onClick={() => {
+                resetSettings()
+                onClose()
+              }}
+              className="btn-secondary"
+            >
+              Сбросить
             </button>
             <button onClick={onClose} className="btn-primary">
               Применить

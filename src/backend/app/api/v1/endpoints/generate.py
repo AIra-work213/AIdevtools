@@ -1,4 +1,5 @@
 from typing import Any, Dict, List
+import json
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -43,7 +44,9 @@ async def generate_manual_tests(
 
         result = await ai_service.generate_manual_tests(
             requirements=request.requirements,
-            metadata=request.metadata.dict() if request.metadata else None
+            metadata=request.metadata.model_dump() if request.metadata else None,
+            generation_settings=request.generation_settings.model_dump() if request.generation_settings else None,
+            conversation_history=[msg.model_dump() for msg in request.conversation_history] if request.conversation_history else None
         )
 
         # Validate generated code
@@ -101,7 +104,9 @@ async def generate_manual_tests_stream(
             # Generate tests
             result = await ai_service.generate_manual_tests(
                 requirements=request.requirements,
-                metadata=request.metadata.dict() if request.metadata else None
+                metadata=request.metadata.model_dump() if request.metadata else None,
+                generation_settings=request.generation_settings.model_dump() if request.generation_settings else None,
+                conversation_history=[msg.model_dump() for msg in request.conversation_history] if request.conversation_history else None
             )
 
             # Send progress
