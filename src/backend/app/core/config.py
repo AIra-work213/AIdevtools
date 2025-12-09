@@ -80,7 +80,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_HOUR: int = 100
 
     # AI Settings
-    MAX_TOKENS_GENERATION: int = 4000
+    MAX_TOKENS_GENERATION: int = 16000  # Increased for large test suites
     TEMPERATURE_GENERATION: float = 0.3
     TOP_P_GENERATION: float = 0.95
 

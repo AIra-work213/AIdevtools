@@ -287,7 +287,7 @@ Return ONLY the Python code, no explanations."""
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.2,  # Lower temperature for more consistent code
-                max_tokens=3000   # Reduced tokens for faster response
+                max_tokens=16000  # Large limit for comprehensive test suites
             )
 
             # Clean up code if wrapped in markdown
