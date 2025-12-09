@@ -449,8 +449,8 @@ class CodeUploader:
                             skipped_count += 1
                             continue
                         
-                        # Process only source code files or files with no extension (like Dockerfile)
-                        if file_ext not in SOURCE_EXTENSIONS and file_ext:
+                        # Process ONLY source code files with recognized extensions
+                        if file_ext not in SOURCE_EXTENSIONS:
                             skipped_count += 1
                             continue
                             
