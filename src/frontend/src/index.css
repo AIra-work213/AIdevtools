@@ -6,21 +6,44 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Light theme colors */
+    --bg-gradient-start: #e0f2fe;
+    --bg-gradient-mid1: #eef2ff;
+    --bg-gradient-mid2: #f8fafc;
+    --bg-gradient-end: #e2e8f0;
+    --text-primary: #0f172a;
+  }
+
+  .dark {
+    /* Dark theme colors */
+    --bg-gradient-start: #312e81;
+    --bg-gradient-mid1: #0f172a;
+    --bg-gradient-mid2: #0f172a;
+    --bg-gradient-end: #020617;
+    --text-primary: #e2e8f0;
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
-    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
   }
 
   body {
-    background: radial-gradient(circle at 20% 20%, #e0f2fe 0, #eef2ff 35%, #f8fafc 70%, #e2e8f0 100%);
-    color: #0f172a;
+    background: radial-gradient(circle at 20% 20%, 
+      var(--bg-gradient-start) 0%, 
+      var(--bg-gradient-mid1) 35%, 
+      var(--bg-gradient-mid2) 70%, 
+      var(--bg-gradient-end) 100%);
+    color: var(--text-primary);
     @apply overflow-x-hidden antialiased;
-    transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
+    transition: background 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dark body {
-    background: radial-gradient(circle at 15% 20%, #312e81 0, #0f172a 45%, #020617 100%);
-    color: #e2e8f0;
+  * {
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   a {

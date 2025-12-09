@@ -42,17 +42,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, [theme])
 
   const toggleTheme = () => {
-    // Add transition class before changing theme
-    const root = document.documentElement
-    root.style.transition = 'background-color 0.3s ease, color 0.3s ease'
-
-    // Change theme
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-
-    // Remove transition after animation completes
-    setTimeout(() => {
-      root.style.transition = ''
-    }, 300)
   }
 
   const value = {
