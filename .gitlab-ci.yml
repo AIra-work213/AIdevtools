@@ -27,26 +27,33 @@ deploy_to_server:
     # 2. Собрать (если нужно) и запустить новые контейнеры в фоновом режиме (-d)
     - docker compose up -d --build
     
-    # 3. Подождать немного для инициализации
-    - sleep 10
+    # 3. Подождать для инициализации
+    - sleep 15
     
-    # 4. Показать статус контейнеров
-    - echo "=== Container Status ==="
+    # 4. Проверить статус (если упадёт - перейдём в after_script)
     - docker compose ps
+    - docker compose logs backend
     
-    # 5. Показать логи backend (последние 100 строк)
-    - echo "=== Backend Logs ==="
-    - docker compose logs --tail=100 backend || true
-    
-    # 6. Показать логи frontend
-    - echo "=== Frontend Logs ==="
-    - docker compose logs --tail=50 frontend || true
-    
-    # 7. Проверить health check
-    - echo "=== Health Check ==="
-    - docker inspect testops-backend --format='{{json .State.Health}}' || true
-
     - echo "Деплой завершен успешно!"
+  
+  # Этот блок выполнится ВСЕГДА, даже если script упал
+  after_script:
+    - cd $CI_PROJECT_DIR || true
+    - echo "=== DEBUGGING INFORMATION ==="
+    - echo "=== Container Status ==="
+    - docker compose ps || docker ps -a || true
+    - echo ""
+    - echo "=== Backend Container Logs (last 200 lines) ==="
+    - docker compose logs --tail=200 backend || docker logs testops-backend || true
+    - echo ""
+    - echo "=== Backend Health Check ==="
+    - docker inspect testops-backend --format='{{json .State.Health}}' | python3 -m json.tool || true
+    - echo ""
+    - echo "=== Frontend Logs (last 50 lines) ==="
+    - docker compose logs --tail=50 frontend || true
+    - echo ""
+    - echo "=== All containers ==="
+    - docker ps -a || true
     
   # Условие: запускать только при push в ветку main (или master)
   only:
