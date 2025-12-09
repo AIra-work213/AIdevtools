@@ -1,6 +1,6 @@
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { GenerationSettings } from '@/stores/settingsStore'
+import type { GenerationSettings } from '@/stores/settingsStore'
 
 interface GenerationSettingsModalProps {
   onClose: () => void

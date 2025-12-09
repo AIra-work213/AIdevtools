@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import {
@@ -7,17 +7,16 @@ import {
   DocumentArrowDownIcon,
   PencilIcon,
   CheckIcon,
-  XMarkIcon,
-  ArrowDownTrayIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { useHistoryStore } from '@/stores/historyStore'
 import { useChatStore } from '@/stores/chatStore'
-import { exportChat, downloadFile } from '@/utils/export'
+import { exportChat as exportChatUtil, downloadFile } from '@/utils/export'
 import { toast } from 'react-hot-toast'
 
 export function History() {
-  const { chatHistory, deleteChat, exportChat, updateChatTitle } = useHistoryStore()
-  const { messages, clearChat } = useChatStore()
+  const { chatHistory, deleteChat, updateChatTitle } = useHistoryStore()
+  const { clearChat } = useChatStore()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
 
@@ -47,7 +46,7 @@ export function History() {
     const chat = chatHistory.find(c => c.id === chatId)
     if (!chat) return
 
-    const exportContent = exportChat({
+    const exportContent = exportChatUtil({
       format,
       title,
       messages: chat.messages,

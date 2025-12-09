@@ -7,14 +7,14 @@ import {
   DocumentArrowDownIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { useSettingsStore, GenerationSettings } from '@/stores/settingsStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { useHistoryStore } from '@/stores/historyStore'
 import { useChatStore } from '@/stores/chatStore'
 import { toast } from 'react-hot-toast'
 
 export function Settings() {
   const { generationSettings, updateSettings, resetSettings } = useSettingsStore()
-  const { chatHistory, clearHistory, exportChat } = useHistoryStore()
+  const { chatHistory, clearHistory } = useHistoryStore()
   const { clearChat } = useChatStore()
   const [darkMode, setDarkMode] = useState(false)
 
@@ -88,7 +88,7 @@ export function Settings() {
             <select
               className="mt-1 input"
               value={generationSettings.detail_level}
-              onChange={(e) => updateSettings({ detail_level: e.target.value })}
+              onChange={(e) => updateSettings({ detail_level: e.target.value as 'minimal' | 'standard' | 'detailed' })}
             >
               <option value="minimal">Минимальный</option>
               <option value="standard">Стандартный</option>
