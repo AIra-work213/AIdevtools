@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{user}:{password}@{host}/{db}"
 
     # Cloud.ru API
-    CLOUD_API_KEY: str = "dummy-cloud-api-key"
+    CLOUD_API_KEY: Optional[str] = "dummy-cloud-api-key"
     CLOUD_API_URL: str = "https://foundation-models.api.cloud.ru/v1"
     CLOUD_MODEL: str = "openai/gpt-oss-120b"  # Alternative: "Qwen/Qwen3-Coder-480B-A35B-Instruct"
 
@@ -52,8 +52,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
 
     # GitLab
-    GITLAB_URL: str = "https://gitlab.example.com"
-    GITLAB_TOKEN: str = "dummy-gitlab-token"
+    GITLAB_URL: Optional[str] = "https://gitlab.example.com"
+    GITLAB_TOKEN: Optional[str] = "dummy-gitlab-token"
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
