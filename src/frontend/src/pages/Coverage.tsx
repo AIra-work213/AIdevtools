@@ -2,9 +2,9 @@ import React, { useState, useRef } from 'react';
 import { CloudArrowUpIcon, CodeBracketIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { useCoverageStore } from '@/stores/coverageStore';
 import LanguageSelector from '@/components/LanguageSelector';
-import CoverageVisualization from '@/components/coverage/CoverageVisualization';
-import UncoveredFunctionsList from '@/components/coverage/UncoveredFunctionsList';
-import GeneratedTestsViewer from '@/components/coverage/GeneratedTestsViewer';
+import CoverageVisualization from '@/components/code-coverage/CoverageVisualization';
+import UncoveredFunctionsList from '@/components/code-coverage/UncoveredFunctionsList';
+import GeneratedTestsViewer from '@/components/code-coverage/GeneratedTestsViewer';
 
 const Coverage: React.FC = () => {
   const {
