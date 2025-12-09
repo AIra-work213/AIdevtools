@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import {
+  SparklesIcon,
+  ChatBubbleLeftRightIcon,
+  ChartBarIcon,
+  ClockIcon,
   DocumentTextIcon,
   CodeBracketIcon,
-  FolderOpenIcon,
-  ChartBarIcon,
 } from '@heroicons/react/24/outline'
 
 export function QuickActions() {
@@ -11,56 +13,64 @@ export function QuickActions() {
 
   const actions = [
     {
-      title: 'Генерация ручных тестов',
-      description: 'Из текстовых требований',
-      icon: DocumentTextIcon,
+      title: 'ИИ Ассистент',
+      description: 'Генерация тестов с AI',
+      icon: SparklesIcon,
       onClick: () => navigate('/chat'),
-      color: 'bg-blue-500',
+      color: 'bg-gradient-to-br from-blue-500 to-indigo-600',
     },
     {
-      title: 'Генерация API тестов',
-      description: 'Из OpenAPI спецификации',
-      icon: CodeBracketIcon,
-      onClick: () => navigate('/chat?type=api'),
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Валидация кода',
-      description: 'Проверка стандартов',
+      title: 'Анализ покрытия',
+      description: 'GitHub/GitLab репозиторий',
       icon: ChartBarIcon,
-      onClick: () => navigate('/chat?action=validate'),
-      color: 'bg-yellow-500',
+      onClick: () => navigate('/coverage'),
+      color: 'bg-gradient-to-br from-green-500 to-emerald-600',
     },
     {
-      title: 'Поиск дубликатов',
-      description: 'В существующих тестах',
-      icon: FolderOpenIcon,
-      onClick: () => navigate('/chat?action=duplicates'),
-      color: 'bg-purple-500',
+      title: 'История диалогов',
+      description: 'Сохраненные чаты',
+      icon: ClockIcon,
+      onClick: () => navigate('/history'),
+      color: 'bg-gradient-to-br from-purple-500 to-pink-600',
+    },
+    {
+      title: 'Настройки ИИ',
+      description: 'Параметры генерации',
+      icon: CodeBracketIcon,
+      onClick: () => navigate('/settings'),
+      color: 'bg-gradient-to-br from-orange-500 to-red-600',
     },
   ]
 
   return (
     <div className="card">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-        Быстрые действия
-      </h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex items-center mb-6">
+        <SparklesIcon className="h-6 w-6 text-primary-500 mr-2" />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Основные функции
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {actions.map((action) => (
           <button
             key={action.title}
             onClick={action.onClick}
-            className="flex flex-col items-center justify-center rounded-lg border border-gray-200 p-4 text-center hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-800 transition-colors"
+            className="group relative flex flex-col items-start rounded-xl border border-gray-200 dark:border-gray-700 p-5 text-left hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-lg hover:scale-105 transition-all duration-200 overflow-hidden"
           >
-            <div className={`${action.color} rounded-lg p-2`}>
-              <action.icon className="h-6 w-6 text-white" />
+            {/* Background gradient on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-transparent dark:from-primary-900/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <div className="relative z-10 w-full">
+              <div className={`${action.color} rounded-lg p-3 w-fit mb-3 shadow-md group-hover:shadow-lg transition-shadow`}>
+                <action.icon className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-base font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                {action.title}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {action.description}
+              </p>
             </div>
-            <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-              {action.title}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {action.description}
-            </p>
           </button>
         ))}
       </div>
