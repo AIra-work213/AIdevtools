@@ -128,6 +128,7 @@ class CloudEvolutionClient:
                 "messages": messages,
                 "max_tokens": max_tokens or settings.MAX_TOKENS_GENERATION,
                 "temperature": temperature or settings.TEMPERATURE_GENERATION,
+                "presence_penalty": 0,
                 "top_p": settings.TOP_P_GENERATION
             }
 
