@@ -4,8 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 import structlog
 import json
+import traceback
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -59,29 +61,17 @@ app.add_middleware(
 )
 
 
-# Middleware for logging request bodies
+# Middleware for logging requests
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    # Log request details for POST/PUT/PATCH
-    if request.method in ["POST", "PUT", "PATCH"]:
-        try:
-            body_bytes = await request.body()
-            body_str = body_bytes.decode('utf-8')
-            logger.info(
-                "Incoming request",
-                method=request.method,
-                url=str(request.url),
-                headers={k: v for k, v in request.headers.items() if k.lower() not in ['authorization', 'cookie']},
-                body_preview=body_str[:500] if len(body_str) > 500 else body_str
-            )
-            
-            # Create a new request with cached body
-            async def receive():
-                return {"type": "http.request", "body": body_bytes}
-            
-            request._receive = receive
-        except Exception as e:
-            logger.error("Error reading request body", error=str(e))
+    # Log request metadata
+    logger.info(
+        "Incoming request",
+        method=request.method,
+        url=str(request.url),
+        headers={k: v for k, v in request.headers.items() if k.lower() not in ['authorization', 'cookie']},
+        content_length=request.headers.get('content-length', 'unknown')
+    )
     
     # Process request
     response = await call_next(request)
@@ -101,15 +91,45 @@ async def log_requests(request: Request, call_next):
 # Exception handler for validation errors
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    body = None
+    try:
+        body = await request.body()
+        body_str = body.decode('utf-8') if body else None
+    except Exception:
+        body_str = None
+    
     logger.error(
         "Validation error",
         method=request.method,
         url=str(request.url),
-        errors=exc.errors()
+        errors=exc.errors(),
+        body=body_str
     )
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors()}
+        content={
+            "detail": exc.errors(),
+            "body_received": body_str
+        }
+    )
+
+
+# Exception handler for general exceptions
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "Unhandled exception",
+        method=request.method,
+        url=str(request.url),
+        error=str(exc),
+        traceback=traceback.format_exc()
+    )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error",
+            "error": str(exc)
+        }
     )
 
 
