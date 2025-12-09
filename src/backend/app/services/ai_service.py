@@ -691,3 +691,7 @@ class Test{class_name}:
         step_code.append('            pass')
 
         return '\n'.join(step_code)
+
+
+# Create singleton instance
+ai_service = AIService()
