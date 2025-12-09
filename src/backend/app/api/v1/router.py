@@ -4,7 +4,8 @@ from app.api.v1.endpoints import (
     generate,
     analyze,
     gitlab,
-    health
+    health,
+    coverage
 )
 
 api_router = APIRouter()
@@ -32,6 +33,12 @@ api_router.include_router(
     gitlab.router,
     prefix="/gitlab",
     tags=["gitlab"]
+)
+
+api_router.include_router(
+    coverage.router,
+    prefix="/coverage",
+    tags=["coverage"]
 )
 
 # TODO: Add auth router

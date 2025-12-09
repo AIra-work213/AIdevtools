@@ -4,6 +4,7 @@ import { Dashboard } from '@/pages/Dashboard'
 import { Chat } from '@/pages/Chat'
 import { History } from '@/pages/History'
 import { Settings } from '@/pages/Settings'
+// import Coverage from '@/pages/Coverage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 function App() {
@@ -28,6 +29,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* <Route
+          path="/coverage"
+          element={
+            <ProtectedRoute>
+              <Coverage />
+            </ProtectedRoute>
+          }
+        /> */}
         <Route
           path="/settings"
           element={

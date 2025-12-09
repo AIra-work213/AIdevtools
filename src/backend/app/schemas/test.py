@@ -179,3 +179,72 @@ class OptimizationResult(BaseModel):
     metrics_before: Dict[str, Any]
     metrics_after: Dict[str, Any]
     improvement_score: float  # 0-1
+
+
+# Code Coverage Analysis Schemas
+
+class UploadedFile(BaseModel):
+    """Information about an uploaded file"""
+    name: str
+    path: str
+    content: str
+    language: str
+    size: int
+    is_test_file: bool = False
+
+
+class CoverageMetrics(BaseModel):
+    """Coverage metrics for a file or function"""
+    lines_covered: int
+    lines_total: int
+    coverage_percentage: float
+    functions_covered: int
+    functions_total: int
+    branches_covered: int
+    branches_total: int
+
+
+class UncoveredFunction(BaseModel):
+    """Function not covered by tests"""
+    name: str
+    file_path: str
+    line_start: int
+    line_end: int
+    signature: str
+    complexity: int = 1
+    priority: str = "medium"  # high, medium, low
+
+
+class CoverageAnalysisRequest(BaseModel):
+    """Request for coverage analysis"""
+    project_files: List[UploadedFile]
+    test_files: List[UploadedFile] = []
+    language: str = "python"
+    framework: str = "pytest"
+    include_suggestions: bool = True
+
+
+class CoverageAnalysisResponse(BaseModel):
+    """Response for coverage analysis"""
+    total_files: int
+    test_files: int
+    overall_coverage: float
+    file_coverage: Dict[str, CoverageMetrics]
+    uncovered_functions: List[UncoveredFunction]
+    coverage_report: str
+    suggestions: List[str]
+
+
+class GenerateTestsForCoverageRequest(BaseModel):
+    """Request to generate tests for uncovered functions"""
+    uncovered_functions: List[UncoveredFunction]
+    project_context: str
+    generation_settings: Optional[GenerationSettings] = None
+
+
+class GenerateTestsForCoverageResponse(BaseModel):
+    """Response with generated tests for coverage"""
+    generated_tests: Dict[str, str]  # function_name -> test_code
+    coverage_improvement: float
+    validation: ValidationResult
+    test_files_created: List[str]

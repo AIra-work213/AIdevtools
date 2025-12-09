@@ -9,6 +9,7 @@ import {
   MoonIcon,
   Bars3Icon,
   XMarkIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Logo } from '@/components/ui/Logo'
@@ -27,6 +28,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Дашборд', href: '/dashboard', icon: Squares2X2Icon },
     { name: 'Чат с ассистентом', href: '/chat', icon: ChatBubbleLeftRightIcon },
     { name: 'История', href: '/history', icon: ClockIcon },
+    { name: 'Покрытие кода', href: '/coverage', icon: ChartBarIcon },
     { name: 'Настройки', href: '/settings', icon: Cog6ToothIcon },
   ]
 
@@ -86,7 +88,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-grow flex-col overflow-y-auto border-r border-white/10 bg-white/80 backdrop-blur dark:bg-slate-900/80">
+        <div className="flex flex-grow flex-col overflow-y-auto border-r border-white/10 bg-white/80 backdrop-blur dark:bg-slate-900/80 transition-theme">
           <div className="flex h-16 items-center px-6">
             <Logo />
           </div>
@@ -98,7 +100,7 @@ export function Layout({ children }: LayoutProps) {
                   key={item.name}
                   to={item.href}
                   className={({ isActive }) =>
-                    `group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    `group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
                         : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700'
@@ -106,7 +108,7 @@ export function Layout({ children }: LayoutProps) {
                   }
                 >
                   <item.icon
-                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                    className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors duration-200 ${
                       isActive
                         ? 'text-primary-500 dark:text-primary-400'
                         : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'

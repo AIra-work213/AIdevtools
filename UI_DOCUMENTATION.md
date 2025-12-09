@@ -303,3 +303,67 @@ border-radius: 0.5rem
 ---
 
 **Создано с использованием TailwindCSS 3 + React 18**
+
+
+Привет! Мне нужно создать комплексный набор тестов для Python-приложения.
+
+Вот функция для тестирования:
+
+```python
+class UserService:
+    def __init__(self, db_connection):
+        self.db = db_connection
+    
+    def create_user(self, username: str, email: str, age: int) -> dict:
+        """
+        Создает нового пользователя в базе данных.
+        
+        Args:
+            username: Имя пользователя (3-20 символов, только буквы и цифры)
+            email: Email адрес (должен быть валидным)
+            age: Возраст (должен быть 18+)
+            
+        Returns:
+            dict: Данные созданного пользователя с id
+            
+        Raises:
+            ValueError: Если данные невалидны
+            DatabaseError: Если ошибка при сохранении
+        """
+        # Валидация
+        if not username or len(username) < 3 or len(username) > 20:
+            raise ValueError("Username должен быть от 3 до 20 символов")
+        
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+            raise ValueError("Невалидный email")
+        
+        if age < 18:
+            raise ValueError("Возраст должен быть 18+")
+        
+        # Проверка уникальности
+        if self.db.find_user(username=username):
+            raise ValueError("Пользователь с таким username уже существует")
+        
+        # Сохранение
+        user_data = {
+            'username': username,
+            'email': email,
+            'age': age,
+            'created_at': datetime.now()
+        }
+        
+        user_id = self.db.insert('users', user_data)
+        user_data['id'] = user_id
+        
+        return user_data
+
+Требования к тестам:
+
+Используй pytest с fixture для mock базы данных
+Покрой все edge cases: граничные значения, невалидные данные, дубликаты
+Добавь параметризованные тесты для разных сценариев валидации
+Включи негативные тесты для всех исключений
+Используй AAA паттерн (Arrange-Act-Assert)
+Добавь тесты на типы данных и форматы
+Проверь поведение при сетевых ошибках БД
+Температуру генерации поставь 0.3 для более предсказуемого кода

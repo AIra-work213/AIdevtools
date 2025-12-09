@@ -1,4 +1,5 @@
 import { UserCircleIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 
 interface ChatMessageProps {
   message: {
@@ -30,7 +31,11 @@ export function ChatMessage({ message, onCodeGenerated }: ChatMessageProps) {
 
       <div className={`flex-1 ${isUser ? 'text-right' : ''}`}>
         <div className={`chat-message ${message.type}`}>
-          <div className="whitespace-pre-wrap">{message.content}</div>
+          {isUser ? (
+            <div className="whitespace-pre-wrap">{message.content}</div>
+          ) : (
+            <MarkdownRenderer>{message.content}</MarkdownRenderer>
+          )}
 
           {message.metadata?.code && onCodeGenerated && (
             <div className="mt-3">
