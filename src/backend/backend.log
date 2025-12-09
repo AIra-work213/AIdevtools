@@ -216,3 +216,33 @@ INFO:     Started server process [52438]
 INFO:     Waiting for application startup.
 {"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:01:29.908558Z"}
 INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/services/ai_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:10:46.123326Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [52438]
+INFO:     Started server process [56217]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:10:52.057910Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/services/ai_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:11:01.794719Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56217]
+INFO:     Started server process [56327]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:11:06.249212Z"}
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/services/ai_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"event": "Shutting down TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:11:12.071848Z"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56327]
+INFO:     Started server process [56448]
+INFO:     Waiting for application startup.
+{"version": "1.0.0", "event": "Starting TestOps Copilot API", "logger": "app.main", "level": "info", "timestamp": "2025-12-09T12:11:14.353849Z"}
+INFO:     Application startup complete.

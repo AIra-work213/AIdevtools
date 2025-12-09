@@ -107,8 +107,8 @@ class CloudEvolutionClient:
         self.client = AsyncOpenAI(
             api_key=settings.CLOUD_API_KEY,
             base_url=settings.CLOUD_API_URL,
-            timeout=180.0,  # 3 minutes timeout for each request
-            max_retries=5   # Increase retries for flaky Cloud.ru API
+            timeout=120.0,  # 2 minutes timeout for each request
+            max_retries=2   # Reduce retries from 5 to 2 for faster failure
         )
         self.model = settings.CLOUD_MODEL
         self.logger = logger.bind(service="CloudEvolutionClient")
@@ -216,71 +216,103 @@ class AIService(LoggerMixin):
         requirements: str,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """Generate manual tests from requirements using schema-guided reasoning"""
+        """Generate manual tests from requirements - optimized single request"""
         start_time = time.time()
 
-        system_prompt = """
-        You are an expert QA engineer with 10+ years of experience in test automation.
-        Analyze the user requirements and generate comprehensive test cases.
+        # Build comprehensive prompt for direct Python code generation
+        feature = metadata.get("feature", "User Generated") if metadata else "User Generated"
+        owner = metadata.get("owner", "QA Engineer") if metadata else "QA Engineer"
 
-        Guidelines:
-        1. Extract all functional requirements from the input
-        2. Create test cases for positive scenarios
-        3. Consider edge cases and error conditions
-        4. Follow the AAA pattern (Arrange-Act-Assert)
-        5. Use clear, descriptive test names
-        6. Include expected results for each test
+        system_prompt = """You are an expert QA engineer specializing in test automation with pytest and Allure.
+Generate ready-to-use Python test code that follows best practices."""
 
-        Focus on:
-        - User workflows and interactions
-        - Business rules and validations
-        - Error handling
-        - Edge cases and boundary values
-        """
+        user_prompt = f"""Generate pytest test code for these requirements:
 
-        user_prompt = f"""
-        Generate manual test cases for the following requirements:
+{requirements}
 
-        Requirements:
-        {requirements}
+Generate a complete Python test class with:
+1. Import statements (allure, pytest, allure_commons.types.Severity)
+2. Class decorated with @allure.feature("{feature}") and @allure.story("Test Scenarios")
+3. Multiple test methods covering:
+   - Happy path scenarios
+   - Edge cases
+   - Error conditions
+4. Each test method should have:
+   - @allure.title() with clear test name
+   - @allure.severity() (NORMAL, HIGH, or CRITICAL)
+   - @allure.manual decorator
+   - Docstring describing the test
+   - allure.step() for each test step with TODO comments
+   - Assertion step at the end
 
-        {f'Additional Metadata: {metadata}' if metadata else ''}
+Example format:
+```python
+import allure
+import pytest
+from allure_commons.types import Severity
 
-        Generate comprehensive test cases that cover all aspects of the requirements.
-        """
+@allure.feature("{feature}")
+@allure.story("Test Scenarios")
+@allure.label("owner", "{owner}")
+@allure.tag("generated_by_ai")
+class TestGeneratedScenarios:
+    
+    @allure.title("Test example scenario")
+    @allure.severity(Severity.NORMAL)
+    @allure.manual
+    def test_example_scenario(self):
+        \"\"\"Test description here\"\"\"
+        with allure.step("Step 1: Do something"):
+            # TODO: Implement step
+            pass
+        with allure.step("Assert: Expected result"):
+            # TODO: Add assertions
+            pass
+```
+
+Return ONLY the Python code, no explanations."""
 
         try:
-            # Log the request being sent
             self.logger.info(
-                "Generating manual tests",
+                "Generating manual tests with optimized prompt",
                 requirements_length=len(requirements),
-                has_metadata=metadata is not None,
-                system_prompt_length=len(system_prompt),
-                user_prompt_length=len(user_prompt)
+                feature=feature
             )
             
-            # Use schema-guided reasoning for structured output
-            result = await self.llm_client.chat_completion(
+            # Single request for direct code generation
+            code = await self.llm_client.chat_completion(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                response_schema=SchemaGuidedPrompt.TEST_GENERATION_SCHEMA
+                temperature=0.2,  # Lower temperature for more consistent code
+                max_tokens=3000   # Reduced tokens for faster response
             )
 
-            # Generate Python code from structured result
-            if isinstance(result, dict):
-                code = await self._generate_python_code_from_structure(result, metadata)
+            # Clean up code if wrapped in markdown
+            if isinstance(code, str):
+                # Remove markdown code blocks if present
+                if "```python" in code:
+                    code = code.split("```python")[1].split("```")[0].strip()
+                elif "```" in code:
+                    code = code.split("```")[1].split("```")[0].strip()
+                
+                # Extract test cases info from code for response
+                test_cases = self._extract_test_cases_from_code(code)
             else:
-                # Fallback: generate code directly
-                code = await self._generate_code_directly(requirements, metadata)
-                result = {"test_cases": []}
+                test_cases = []
 
             generation_time = time.time() - start_time
 
+            self.logger.info(
+                "Manual tests generated successfully",
+                test_count=len(test_cases),
+                generation_time=generation_time
+            )
+
             return {
                 "code": code,
-                "test_cases": result.get("test_cases", []),
+                "test_cases": test_cases,
                 "generation_time": generation_time,
                 "metadata": metadata
             }
@@ -452,6 +484,40 @@ class Test{class_name}:
         """Parse OpenAPI specification"""
         # Implementation for OpenAPI parsing
         return {"parsed": True}
+
+    def _extract_test_cases_from_code(self, code: str) -> List[Dict[str, Any]]:
+        """Extract test case information from generated Python code"""
+        import re
+        test_cases = []
+        
+        # Find all test methods
+        pattern = r'@allure\.title\("([^"]+)"\)[\s\S]*?@allure\.severity\(Severity\.(\w+)\)[\s\S]*?def (test_\w+)\(self\):\s*"""([^"]*?)"""'
+        matches = re.finditer(pattern, code)
+        
+        for match in matches:
+            title = match.group(1)
+            severity = match.group(2).lower()
+            method_name = match.group(3)
+            description = match.group(4).strip()
+            
+            test_cases.append({
+                "title": title,
+                "priority": severity,
+                "description": description,
+                "method_name": method_name
+            })
+        
+        # Fallback: count def test_ methods if regex didn't work
+        if not test_cases:
+            test_methods = re.findall(r'def (test_\w+)\(self\):', code)
+            for method in test_methods:
+                test_cases.append({
+                    "title": method.replace('_', ' ').title(),
+                    "priority": "normal",
+                    "method_name": method
+                })
+        
+        return test_cases
 
     def _build_test_matrix(self, result: Dict[str, Any]) -> Dict[str, List[str]]:
         """Build test matrix from structured result"""
