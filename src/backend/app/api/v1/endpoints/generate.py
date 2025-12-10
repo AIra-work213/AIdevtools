@@ -203,18 +203,69 @@ async def generate_api_tests(
 
 @router.post("/auto/ui")
 async def generate_ui_tests(
-    html_content: str,
-    selectors: Dict[str, str] = None,
+    request: Dict[str, Any],
     current_user: Dict = Depends(get_current_user_optional)
 ):
     """
-    Generate UI/E2E tests from HTML content or selectors
+    Generate UI/E2E tests from HTML content or URL
     """
     user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
     await rate_limiter.check_limit(f"generate:ui:{user_id}")
 
-    # TODO: Implement UI test generation
-    return {"status": "not_implemented"}
+    try:
+        ai_service = AIService()
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
+        
+        input_method = request.get("input_method", "html")
+        html_content = request.get("html_content")
+        url = request.get("url")
+        selectors = request.get("selectors", {})
+        framework = request.get("framework", "playwright")
+        
+        logger.info(
+            "Generating UI tests",
+            user=username,
+            input_method=input_method,
+            framework=framework
+        )
+
+        result = await ai_service.generate_ui_tests(
+            input_method=input_method,
+            html_content=html_content,
+            url=url,
+            selectors=selectors,
+            framework=framework
+        )
+
+        # Validate generated code
+        validation = await ai_service.validate_code(result["code"])
+
+        response = {
+            "code": result["code"],
+            "selectors_found": result["selectors_found"],
+            "test_scenarios": result["test_scenarios"],
+            "validation": ValidationResult(**validation)
+        }
+
+        logger.info(
+            "UI tests generated successfully",
+            user=username,
+            scenarios_count=len(result["test_scenarios"])
+        )
+
+        return response
+
+    except Exception as e:
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
+        logger.error(
+            "Failed to generate UI tests",
+            user=username,
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate UI tests: {str(e)}"
+        )
 
 
 def calculate_coverage(result: Dict[str, Any]) -> float:

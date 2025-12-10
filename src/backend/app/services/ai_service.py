@@ -731,6 +731,217 @@ class Test{class_name}:
 
         return '\n'.join(step_code)
 
+    async def _parse_openapi_spec(self, spec: str) -> Dict[str, Any]:
+        """Parse OpenAPI specification (JSON or YAML)"""
+        import json
+        try:
+            return json.loads(spec)
+        except json.JSONDecodeError:
+            # Try YAML parsing
+            try:
+                import yaml
+                return yaml.safe_load(spec)
+            except Exception:
+                raise ValueError("Invalid OpenAPI specification format")
+
+    async def _generate_api_code_from_structure(
+        self,
+        structure: Dict[str, Any],
+        parsed_spec: Dict[str, Any]
+    ) -> str:
+        """Generate Python API test code from structured data"""
+        endpoints = structure.get("endpoints", [])
+        
+        code_lines = [
+            "import pytest",
+            "import requests",
+            "from typing import Dict, Any",
+            "",
+            "",
+            "BASE_URL = 'http://localhost:8000'  # Change to your API URL",
+            "",
+            ""
+        ]
+        
+        for endpoint in endpoints:
+            path = endpoint.get("path", "/")
+            method = endpoint.get("method", "GET").upper()
+            test_name = f"test_{method.lower()}_{path.replace('/', '_').strip('_')}"
+            
+            code_lines.append(f"def {test_name}():")
+            code_lines.append(f'    """Test {method} {path}"""')
+            code_lines.append(f"    url = BASE_URL + '{path}'")
+            code_lines.append("")
+            
+            if method == "GET":
+                code_lines.append("    response = requests.get(url)")
+            elif method == "POST":
+                code_lines.append("    data = {}")
+                code_lines.append("    response = requests.post(url, json=data)")
+            elif method == "PUT":
+                code_lines.append("    data = {}")
+                code_lines.append("    response = requests.put(url, json=data)")
+            elif method == "DELETE":
+                code_lines.append("    response = requests.delete(url)")
+            
+            code_lines.append("")
+            code_lines.append("    assert response.status_code in [200, 201, 204]")
+            code_lines.append("")
+            code_lines.append("")
+        
+        return "\n".join(code_lines)
+
+    async def _generate_api_code_directly(self, spec: str) -> str:
+        """Generate API test code directly using AI"""
+        prompt = f"""
+Generate Python pytest code for API testing based on this OpenAPI specification:
+
+{spec}
+
+Use requests library. Include:
+1. BASE_URL configuration
+2. Test functions for each endpoint
+3. Proper assertions for status codes
+4. JSON payload examples
+"""
+        
+        response = await self.llm_client.chat_completion(
+            messages=[
+                {"role": "system", "content": "You are an expert API testing engineer."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+        
+        # Clean markdown
+        code = response.get("content", "")
+        if "```python" in code:
+            code = code.split("```python")[1].split("```")[0]
+        elif "```" in code:
+            code = code.split("```")[1].split("```")[0]
+        
+        return code.strip()
+
+    async def generate_ui_tests(
+        self,
+        input_method: str,
+        html_content: Optional[str] = None,
+        url: Optional[str] = None,
+        selectors: Optional[Dict[str, str]] = None,
+        framework: str = "playwright"
+    ) -> Dict[str, Any]:
+        """Generate UI/E2E tests from HTML or URL"""
+        start_time = time.time()
+        
+        system_prompt = f"""
+You are an expert in UI/E2E testing with {framework}.
+Generate comprehensive UI tests based on the provided HTML or URL.
+
+Guidelines:
+1. Identify interactive elements (buttons, inputs, forms)
+2. Create tests for user workflows
+3. Include assertions for page elements and content
+4. Add proper waits and error handling
+5. Follow {framework} best practices
+"""
+        
+        if input_method == "html":
+            user_prompt = f"""
+Generate {framework} tests for this HTML:
+
+```html
+{html_content}
+```
+
+{f'Focus on these selectors: {selectors}' if selectors else ''}
+"""
+        else:
+            user_prompt = f"""
+Generate {framework} tests for the page at: {url}
+
+{f'Focus on these selectors: {selectors}' if selectors else ''}
+"""
+        
+        try:
+            response = await self.llm_client.chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=4000
+            )
+            
+            code = response.get("content", "")
+            
+            # Clean markdown
+            if f"```{framework}" in code or "```typescript" in code or "```javascript" in code:
+                code = code.split("```")[1].split("```")[0]
+                if code.startswith("typescript") or code.startswith("javascript") or code.startswith("python"):
+                    code = "\n".join(code.split("\n")[1:])
+            
+            # Extract selectors and scenarios
+            selectors_found = self._extract_selectors_from_code(code, framework)
+            test_scenarios = self._extract_test_scenarios(code)
+            
+            generation_time = time.time() - start_time
+            
+            return {
+                "code": code.strip(),
+                "selectors_found": selectors_found,
+                "test_scenarios": test_scenarios,
+                "generation_time": generation_time
+            }
+            
+        except Exception as e:
+            self.logger.error("Failed to generate UI tests", error=str(e))
+            raise
+
+    def _extract_selectors_from_code(self, code: str, framework: str) -> List[str]:
+        """Extract selectors from generated code"""
+        import re
+        selectors = []
+        
+        if framework == "playwright":
+            # Extract playwright selectors
+            patterns = [
+                r'page\.locator\(["\']([^"\']+)["\']\)',
+                r'page\.get_by_[a-z]+\(["\']([^"\']+)["\']\)',
+            ]
+        elif framework == "selenium":
+            patterns = [
+                r'find_element\(By\.[A-Z_]+,\s*["\']([^"\']+)["\']\)',
+            ]
+        else:  # cypress
+            patterns = [
+                r'cy\.get\(["\']([^"\']+)["\']\)',
+            ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, code)
+            selectors.extend(matches)
+        
+        return list(set(selectors))[:10]  # Return up to 10 unique selectors
+
+    def _extract_test_scenarios(self, code: str) -> List[str]:
+        """Extract test scenario descriptions from code"""
+        import re
+        scenarios = []
+        
+        # Extract test function names and docstrings
+        test_pattern = r'(?:test|it)\(["\']([^"\']+)["\']\)|(?:def|async def)\s+(test_\w+)|"""([^"]+)"""'
+        matches = re.findall(test_pattern, code)
+        
+        for match in matches:
+            scenario = next((m for m in match if m), None)
+            if scenario and scenario.strip():
+                # Clean up scenario name
+                scenario = scenario.replace('test_', '').replace('_', ' ').title()
+                if len(scenario) > 5:  # Skip very short matches
+                    scenarios.append(scenario)
+        
+        return list(set(scenarios))[:10]  # Return up to 10 unique scenarios
+
 
 # Create singleton instance
 ai_service = AIService()

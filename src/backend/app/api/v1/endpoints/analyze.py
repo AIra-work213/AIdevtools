@@ -15,7 +15,7 @@ from app.schemas.test import (
 from app.services.ai_service import AIService
 from app.services.validation_service import ValidationService
 from app.services.duplicate_service import DuplicateService
-from app.core.deps import get_current_user, RateLimiter
+from app.core.deps import get_current_user, get_current_user_optional, RateLimiter
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -25,12 +25,13 @@ rate_limiter = RateLimiter()
 @router.post("/validate", response_model=ValidationResponse)
 async def validate_code(
     request: ValidationRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user_optional)
 ) -> ValidationResponse:
     """
     Validate Python test code against standards
     """
-    await rate_limiter.check_limit(f"validate:code:{current_user['id']}")
+    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
+    await rate_limiter.check_limit(f"validate:code:{user_id}")
 
     try:
         # First, check syntax
@@ -117,51 +118,64 @@ async def validate_code(
 @router.post("/duplicates", response_model=DuplicateSearchResponse)
 async def find_duplicates(
     request: DuplicateSearchRequest,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_user_optional)
 ) -> DuplicateSearchResponse:
     """
-    Find duplicate or similar test cases
+    Find duplicate or similar test cases in provided code
     """
-    await rate_limiter.check_limit(f"duplicates:search:{current_user['id']}")
+    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
+    username = current_user.get('username', 'anonymous') if current_user else 'anonymous'
+    await rate_limiter.check_limit(f"duplicates:search:{user_id}")
 
     try:
         duplicate_service = DuplicateService()
         logger.info(
             "Searching for duplicate tests",
-            user=current_user["username"],
-            test_cases_count=len(request.test_cases),
+            user=username,
+            code_length=len(request.test_code),
             threshold=request.similarity_threshold
         )
 
+        # Parse test code to extract test functions
+        test_cases = duplicate_service.parse_test_code(request.test_code)
+        
+        if not test_cases:
+            raise HTTPException(
+                status_code=400,
+                detail="No test functions found in provided code"
+            )
+
         duplicates = await duplicate_service.find_duplicates(
-            test_cases=request.test_cases,
+            test_cases=test_cases,
             threshold=request.similarity_threshold
         )
 
         # Build similarity matrix for detailed analysis
         similarity_matrix = duplicate_service.build_similarity_matrix(
-            request.test_cases
+            test_cases
         )
 
         response = DuplicateSearchResponse(
             duplicates=duplicates,
-            total_tests=len(request.test_cases),
+            total_tests=len(test_cases),
             duplicates_found=len(duplicates),
-            similarity_matrix=similarity_matrix if len(request.test_cases) <= 50 else None
+            similarity_matrix=similarity_matrix if len(test_cases) <= 50 else None
         )
 
         logger.info(
             "Duplicate search completed",
-            user=current_user["username"],
+            user=username,
             duplicates_found=len(duplicates)
         )
 
         return response
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(
             "Duplicate search failed",
-            user=current_user["username"],
+            user=username,
             error=str(e)
         )
         raise HTTPException(

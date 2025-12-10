@@ -1,4 +1,6 @@
 import numpy as np
+import ast
+import re
 from typing import Any, Dict, List, Tuple
 import structlog
 
@@ -18,6 +20,42 @@ class DuplicateService(LoggerMixin):
     def __init__(self):
         # Initialize encoder for semantic similarity
         self.encoder = None  # TODO: Initialize sentence transformer
+
+    def parse_test_code(self, code: str) -> List[TestCase]:
+        """
+        Parse Python test code and extract individual test functions
+        """
+        test_cases = []
+        
+        try:
+            tree = ast.parse(code)
+            
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    # Check if it's a test function
+                    if node.name.startswith('test_'):
+                        # Extract docstring
+                        docstring = ast.get_docstring(node) or ""
+                        
+                        # Get function body as code
+                        func_lines = ast.get_source_segment(code, node) or ""
+                        
+                        # Create TestCase from function
+                        test_cases.append(TestCase(
+                            id=len(test_cases),
+                            title=node.name,
+                            description=docstring,
+                            steps=[func_lines],  # Full function code
+                            expected_result="Test should pass",
+                            priority="normal"
+                        ))
+            
+            logger.info(f"Parsed {len(test_cases)} test functions from code")
+            return test_cases
+            
+        except SyntaxError as e:
+            logger.error(f"Syntax error in test code: {e}")
+            return []
 
     async def find_duplicates(
         self,

@@ -28,7 +28,7 @@ export function Chat() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, isLoading, sendMessage, clearChat, currentResponse } = useChatStore()
+  const { messages, isLoading, sendMessage, clearChat, currentResponse, generationProgress } = useChatStore()
   const { saveChat } = useHistoryStore()
   const { isSaved } = useAutoSave(30000) // Auto-save every 30 seconds
   const { copyToClipboard } = useCopyToClipboard()
@@ -202,6 +202,26 @@ export function Chat() {
 
           {/* Input Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-3">
+            {/* Progress Bar for Streaming */}
+            {isLoading && generationProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Генерация тестов...
+                  </span>
+                  <span className="text-primary-600 dark:text-primary-400 font-medium">
+                    {generationProgress}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-primary-500 to-fuchsia-500 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${generationProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* File Upload */}
             {selectedFile && (
               <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-gray-800">

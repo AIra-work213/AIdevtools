@@ -10,6 +10,10 @@ import {
   Bars3Icon,
   XMarkIcon,
   ChartBarIcon,
+  CheckCircleIcon,
+  DocumentDuplicateIcon,
+  CodeBracketIcon,
+  CursorArrowRaysIcon,
 } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Logo } from '@/components/ui/Logo'
@@ -29,6 +33,10 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Чат с ассистентом', href: '/chat', icon: ChatBubbleLeftRightIcon },
     { name: 'История', href: '/history', icon: ClockIcon },
     { name: 'Покрытие кода', href: '/coverage', icon: ChartBarIcon },
+    { name: 'Валидация кода', href: '/validate', icon: CheckCircleIcon },
+    { name: 'Поиск дубликатов', href: '/duplicates', icon: DocumentDuplicateIcon },
+    { name: 'API тесты', href: '/api-tests', icon: CodeBracketIcon },
+    { name: 'UI тесты', href: '/ui-tests', icon: CursorArrowRaysIcon },
     { name: 'Настройки', href: '/settings', icon: Cog6ToothIcon },
   ]
 
