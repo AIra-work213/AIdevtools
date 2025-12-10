@@ -308,7 +308,10 @@ class AIService(LoggerMixin):
         generation_settings: Optional[Dict[str, Any]] = None,
         conversation_history: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
-        """Generate manual tests from requirements - optimized single request"""
+        """Generate manual tests from requirements - TWO-STAGE GENERATION
+        Stage 1: Generate tests using framework from settings
+        Stage 2: Wrap tests with Allure decorators
+        """
         start_time = time.time()
 
         # Extract settings with defaults
@@ -322,7 +325,7 @@ class AIService(LoggerMixin):
         language = settings.get("language", "python")
         framework = settings.get("framework", "pytest")
 
-        # Build comprehensive prompt for direct Python code generation
+        # Extract metadata
         feature = metadata.get("feature", "User Generated") if metadata else "User Generated"
         owner = metadata.get("owner", "QA Engineer") if metadata else "QA Engineer"
 
@@ -334,26 +337,33 @@ class AIService(LoggerMixin):
                 context += f"{msg['type'].upper()}: {msg['content']}\n"
             context += "\n"
 
-        # Build system prompt based on settings
-        system_prompt = f"""You are an expert QA engineer specializing in test automation with {framework} and Allure.
-Generate ready-to-use {language} test code that follows best practices."""
+        try:
+            # ============ STAGE 1: Generate base tests with framework ============
+            self.logger.info(
+                "STAGE 1: Generating base tests with framework",
+                framework=framework,
+                requirements_length=len(requirements)
+            )
 
-        # Build detailed instructions based on settings
-        instructions = []
-        if detail_level == "minimal":
-            instructions.append("Generate minimal tests with only essential test cases")
-        elif detail_level == "detailed":
-            instructions.append("Generate comprehensive tests with many edge cases and detailed documentation")
-        else:  # standard
-            instructions.append("Generate standard tests covering main scenarios")
+            stage1_system = f"""You are an expert QA engineer specializing in {framework} test automation.
+Generate clean, functional tests using {framework} framework WITHOUT Allure decorators.
+Focus on test logic, assertions, and {framework} best practices."""
 
-        if use_aaa:
-            instructions.append("Use Arrange-Act-Assert pattern in test structure")
+            # Build detailed instructions
+            instructions = []
+            if detail_level == "minimal":
+                instructions.append("Generate minimal tests with only essential test cases")
+            elif detail_level == "detailed":
+                instructions.append("Generate comprehensive tests with many edge cases")
+            else:
+                instructions.append("Generate standard tests covering main scenarios")
 
-        if include_negative:
-            instructions.append("Include negative test scenarios for error handling")
+            if use_aaa:
+                instructions.append("Use Arrange-Act-Assert pattern")
+            if include_negative:
+                instructions.append("Include negative test scenarios")
 
-        user_prompt = f"""Generate {framework} test code for these requirements:
+            stage1_user = f"""Generate {framework} test code for these requirements:
 
 {context}
 Current requirements:
@@ -362,92 +372,105 @@ Current requirements:
 Instructions:
 {chr(10).join(f"- {inst}" for inst in instructions)}
 
-Generate a complete {language} test class with:
-1. Import statements (allure, {framework}, allure_commons.types.Severity)
-2. Class decorated with @allure.feature("{feature}") and @allure.story("Test Scenarios")
-3. Multiple test methods covering:
+Generate a complete test class with:
+1. Import {framework} (NO Allure imports yet)
+2. Test class
+3. Multiple test methods (def test_*) covering:
    - Happy path scenarios
    - Edge cases
    {"   - Error conditions" if include_negative else ""}
-4. Each test method should have:
-   - @allure.title() with clear test name
-   - @allure.severity() (NORMAL, HIGH, or CRITICAL)
-   - @allure.manual decorator
-   - Docstring describing the test
-   - allure.step() for each test step with TODO comments
-   - Assertion step at the end
+4. Each test should have:
+   - Clear descriptive name
+   - Docstring explaining the test
+   {"   - AAA pattern (Arrange, Act, Assert)" if use_aaa else ""}
+   - Proper assertions
 
-Example format:
+Return ONLY {language} code, no markdown, no explanations."""
+
+            base_code = await self.llm_client.chat_completion(
+                messages=[
+                    {"role": "system", "content": stage1_system},
+                    {"role": "user", "content": stage1_user}
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+
+            # Clean code from markdown
+            if isinstance(base_code, str):
+                if "```python" in base_code:
+                    base_code = base_code.split("```python")[1].split("```")[0].strip()
+                elif "```" in base_code:
+                    base_code = base_code.split("```")[1].split("```")[0].strip()
+            
+            self.logger.info("STAGE 1 completed", code_length=len(base_code))
+
+            # ============ STAGE 2: Wrap with Allure decorators ============
+            self.logger.info("STAGE 2: Wrapping tests with Allure decorators")
+
+            stage2_system = """You are an expert in Allure test reporting framework.
+Your task is to add Allure decorators to existing tests WITHOUT changing test logic."""
+
+            stage2_user = f"""Add Allure decorators to this test code:
+
 ```python
-import allure
-import {framework}
-from allure_commons.types import Severity
-
-@allure.feature("{feature}")
-@allure.story("Test Scenarios")
-@allure.label("owner", "{owner}")
-@allure.tag("generated_by_ai")
-class TestGeneratedScenarios:
-
-    @allure.title("Test example scenario")
-    @allure.severity(Severity.NORMAL)
-    @allure.manual
-    def test_example_scenario(self):
-        \"\"\"Test description here\"\"\"
-        {"        # Arrange" if use_aaa else ""}
-        {"        test_data = 'example'" if use_aaa else ""}
-        {"        " if use_aaa else ""}with allure.step("Step 1: Do something"):
-            # TODO: Implement step
-            pass
-        {"        # Act" if use_aaa else ""}
-        {"        result = perform_action()" if use_aaa else ""}
-        {"        " if use_aaa else ""}with allure.step("Assert: Expected result"):
-            # TODO: Add assertions
-            pass
+{base_code}
 ```
 
-Return ONLY the {language} code, no explanations."""
+Requirements:
+1. Add imports: allure, allure_commons.types.Severity
+2. Add class decorators:
+   - @allure.feature("{feature}")
+   - @allure.story("Test Scenarios")
+   - @allure.label("owner", "{owner}")
+   - @allure.tag("generated_by_ai")
+3. For EACH test method add:
+   - @allure.title("Clear test description")
+   - @allure.severity(Severity.NORMAL or HIGH or CRITICAL based on importance)
+   - @allure.manual
+4. Wrap test steps with allure.step():
+   - with allure.step("Arrange: Setup"): ...
+   - with allure.step("Act: Perform action"): ...
+   - with allure.step("Assert: Verify result"): ...
 
-        try:
-            self.logger.info(
-                "Generating manual tests with optimized prompt",
-                requirements_length=len(requirements),
-                feature=feature
-            )
-            
-            # Single request for direct code generation
-            code = await self.llm_client.chat_completion(
+IMPORTANT:
+- Keep ALL original test logic unchanged
+- Keep ALL assertions unchanged
+- Only ADD Allure decorators and step wrappers
+- Return complete working code
+
+Return ONLY Python code, no markdown, no explanations."""
+
+            final_code = await self.llm_client.chat_completion(
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "system", "content": stage2_system},
+                    {"role": "user", "content": stage2_user}
                 ],
-                temperature=temperature,  # Use temperature from settings
-                max_tokens=max_tokens  # Use max_tokens from settings
+                temperature=0.2,  # Lower temperature for more precise wrapping
+                max_tokens=max_tokens
             )
 
-            # Clean up code if wrapped in markdown
-            if isinstance(code, str):
-                # Remove markdown code blocks if present
-                if "```python" in code:
-                    code = code.split("```python")[1].split("```")[0].strip()
-                elif "```" in code:
-                    code = code.split("```")[1].split("```")[0].strip()
-                
-                # Extract test cases info from code for response
-                test_cases = self._extract_test_cases_from_code(code)
-            else:
-                test_cases = []
+            # Clean final code
+            if isinstance(final_code, str):
+                if "```python" in final_code:
+                    final_code = final_code.split("```python")[1].split("```")[0].strip()
+                elif "```" in final_code:
+                    final_code = final_code.split("```")[1].split("```")[0].strip()
 
+            self.logger.info("STAGE 2 completed", final_code_length=len(final_code))
+
+            # Extract test cases from final code
+            test_cases = self._extract_test_cases_from_code(final_code)
             generation_time = time.time() - start_time
 
             self.logger.info(
-                "Manual tests generated successfully",
+                "Two-stage generation completed successfully",
                 test_count=len(test_cases),
                 generation_time=generation_time
             )
 
             return {
-                "code": code,
+                "code": final_code,
                 "test_cases": test_cases,
                 "generation_time": generation_time,
                 "metadata": metadata

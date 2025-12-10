@@ -14,6 +14,7 @@ import {
   DocumentDuplicateIcon,
   CodeBracketIcon,
   CursorArrowRaysIcon,
+  PlayIcon,
 } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Logo } from '@/components/ui/Logo'
@@ -37,6 +38,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Поиск дубликатов', href: '/duplicates', icon: DocumentDuplicateIcon },
     { name: 'API тесты', href: '/api-tests', icon: CodeBracketIcon },
     { name: 'UI тесты', href: '/ui-tests', icon: CursorArrowRaysIcon },
+    { name: 'Запуск тестов', href: '/run', icon: PlayIcon },
     { name: 'Настройки', href: '/settings', icon: Cog6ToothIcon },
   ]
 
