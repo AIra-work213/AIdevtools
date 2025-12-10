@@ -49,6 +49,12 @@ pytest-mock==3.12.0
 factory-boy==3.3.0
 allure-pytest==2.15.2  # Allure test reporting framework
 
+# UI Testing (headless browsers)
+selenium==4.15.2
+webdriver-manager==4.0.1
+playwright==1.40.0
+pytest-playwright==0.4.3
+
 # Development
 black==23.11.0
 isort==5.12.0

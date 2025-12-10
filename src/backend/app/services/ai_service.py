@@ -983,16 +983,36 @@ Include:
 
 Return ONLY code, no markdown, no explanations."""
         else:
+            # Special headless configuration for Selenium
+            headless_config = ""
+            if framework == "selenium":
+                headless_config = """
+
+CRITICAL: Configure Selenium for HEADLESS mode (Docker/CI compatible):
+```python
+from selenium.webdriver.chrome.options import Options
+
+options = Options()
+options.add_argument('--headless')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+options.add_argument('--disable-gpu')
+
+driver = webdriver.Chrome(options=options)
+```
+Use this configuration in ALL test fixtures!"""
+
             stage1_user = f"""Generate {framework} tests in {language} for the website.
 
 BASE URL: {url}
 {adaptive_context}
+{headless_config}
 
 {f'Focus on these selectors: {selectors}' if selectors else ''}
 
 Include:
 - Complete test file with imports ({framework}, pytest for Python)
-- Setup and teardown fixtures
+- Setup and teardown fixtures with HEADLESS browser configuration
 - Multiple test scenarios covering DIFFERENT pages from the site
 - Each test should target a SPECIFIC URL from the discovered pages
 - Proper assertions
@@ -1343,13 +1363,36 @@ pytest test_ui.py --headless
 ```python
 import pytest
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 @pytest.fixture
 def browser():
+    options = Options()
+    options.add_argument('--headless')  # Headless режим
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    
     service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.implicitly_wait(10)
+    yield driver
+    driver.quit()
+```
+
+**Для Docker/CI:**
+```python
+@pytest.fixture
+def browser():
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.binary_location = '/usr/bin/google-chrome'  # Chrome в Docker
+    
+    driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(10)
     yield driver
     driver.quit()
