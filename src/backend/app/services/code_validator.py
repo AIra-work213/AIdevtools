@@ -134,6 +134,7 @@ class CodeValidator:
 
         runtime_errors = []
         execution_output = ""
+        full_output = ""
         execution_time = 0.0
 
         try:

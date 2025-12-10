@@ -498,9 +498,9 @@ export function Chat() {
                 </div>
 
                 {executionResult.allure_results ? (
+                  /* Allure Results - Compact */
+                  /* Test Summary */
                   <>
-                    {/* Allure Results - Compact */}
-                    {/* Test Summary */}
                     <div className="grid grid-cols-5 gap-2 mb-3">
                       <div className="rounded bg-gray-100 dark:bg-gray-700 p-2 text-center">
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">{executionResult.allure_results.total_tests}</div>
@@ -562,9 +562,9 @@ export function Chat() {
                     )}
                   </>
                 ) : (
+                  /* Non-Allure Results */
+                  /* Status */
                   <>
-                    {/* Non-Allure Results */}
-                    {/* Status */}
                     <div className="mb-3">
                       {executionResult.is_valid && executionResult.can_execute ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
