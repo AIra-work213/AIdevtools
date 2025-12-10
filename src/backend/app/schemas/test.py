@@ -35,7 +35,7 @@ class ChatMessage(BaseModel):
 
 class ManualTestRequest(BaseModel):
     """Request for manual test generation"""
-    requirements: str = Field(..., min_length=3, max_length=10000)
+    requirements: str = Field(..., min_length=3, max_length=50000)
     metadata: Optional[TestMetadata] = None
     generation_settings: Optional[GenerationSettings] = None
     conversation_history: Optional[List[ChatMessage]] = None

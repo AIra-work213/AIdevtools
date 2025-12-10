@@ -351,7 +351,7 @@ class CodeValidator:
         code: str, 
         ai_service, 
         original_requirements: str,
-        max_retries: int = 2
+        max_retries: int = 4
     ) -> Dict[str, Any]:
         """
         Validate code and use AI to fix if validation fails
