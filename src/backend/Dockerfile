@@ -8,16 +8,27 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies including Chrome for headless UI testing
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
     git \
     wget \
-    gnupg \
-    # Chrome dependencies
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright Chromium without --with-deps (manual deps)
+RUN apt-get update && apt-get install -y \
     fonts-liberation \
+    fonts-noto-color-emoji \
+    fonts-unifont \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -36,20 +47,8 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libxrandr2 \
     xdg-utils \
-    && wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt-get install -y /tmp/chrome.deb \
-    && rm /tmp/chrome.deb \
+    && playwright install chromium \
     && rm -rf /var/lib/apt/lists/*
-
-# Create app directory
-WORKDIR /app
-
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Playwright browsers (headless)
-RUN playwright install chromium --with-deps
 
 # Copy application code
 COPY . .
