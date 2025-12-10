@@ -229,8 +229,6 @@ export function Chat() {
       setIsExecuting(false)
     }
   }
-    }
-  }
 
   return (
     <div className="flex h-full gap-6">
