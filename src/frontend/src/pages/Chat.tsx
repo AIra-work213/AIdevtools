@@ -44,6 +44,7 @@ interface ExecutionResult {
 
 export function Chat() {
   const [generatedCode, setGeneratedCode] = useState('')
+  const [sourceCode, setSourceCode] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
@@ -498,7 +499,6 @@ export function Chat() {
                 </div>
 
                 {executionResult.allure_results ? (
-                  /* Allure Results - Compact */
                   <>
                     <div className="grid grid-cols-5 gap-2 mb-3">
                       <div className="rounded bg-gray-100 dark:bg-gray-700 p-2 text-center">
