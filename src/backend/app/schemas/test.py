@@ -248,3 +248,24 @@ class GenerateTestsForCoverageResponse(BaseModel):
     coverage_improvement: float
     validation: ValidationResult
     test_files_created: List[str]
+
+
+class UiTestRequest(BaseModel):
+    """Request for UI test generation"""
+    input_method: str = Field(..., description="Method: 'html' or 'url'")
+    html_content: Optional[str] = Field(None, description="HTML content for parsing")
+    url: Optional[str] = Field(None, description="URL to test")
+    selectors: Optional[Dict[str, str]] = Field(default_factory=dict, description="Custom selectors")
+    framework: str = Field(default="playwright", description="UI framework: playwright, selenium, cypress")
+    generation_settings: Optional[GenerationSettings] = None
+
+
+class UiTestResponse(BaseModel):
+    """Response for UI test generation"""
+    code: str
+    selectors_found: List[str]
+    test_scenarios: List[str]
+    setup_instructions: str
+    requirements_file: str
+    validation: ValidationResult
+    generation_time: float

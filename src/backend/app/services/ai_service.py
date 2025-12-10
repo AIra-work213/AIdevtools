@@ -853,36 +853,60 @@ Use requests library. Include:
         selectors: Optional[Dict[str, str]] = None,
         framework: str = "playwright"
     ) -> Dict[str, Any]:
-        """Generate UI/E2E tests from HTML or URL"""
+        """Generate UI/E2E tests from HTML or URL with setup instructions"""
         start_time = time.time()
+        
+        # Language mapping
+        language_map = {
+            "playwright": "python",
+            "selenium": "python",
+            "cypress": "javascript"
+        }
+        language = language_map.get(framework, "python")
         
         system_prompt = f"""
 You are an expert in UI/E2E testing with {framework}.
-Generate comprehensive UI tests based on the provided HTML or URL.
+Generate comprehensive {language} UI tests based on the provided HTML or URL.
 
 Guidelines:
-1. Identify interactive elements (buttons, inputs, forms)
-2. Create tests for user workflows
+1. Identify interactive elements (buttons, inputs, forms, links)
+2. Create tests for user workflows (login, navigation, form submission)
 3. Include assertions for page elements and content
 4. Add proper waits and error handling
 5. Follow {framework} best practices
+6. Use pytest for Python frameworks
+7. Include proper imports and setup/teardown
+
+IMPORTANT: Return ONLY the test code without any explanations or markdown.
 """
         
         if input_method == "html":
             user_prompt = f"""
-Generate {framework} tests for this HTML:
+Generate {framework} tests in {language} for this HTML:
 
 ```html
 {html_content}
 ```
 
 {f'Focus on these selectors: {selectors}' if selectors else ''}
+
+Include:
+- Complete test file with imports
+- Setup and teardown fixtures
+- Multiple test scenarios
+- Proper assertions
 """
         else:
             user_prompt = f"""
-Generate {framework} tests for the page at: {url}
+Generate {framework} tests in {language} for the page at: {url}
 
 {f'Focus on these selectors: {selectors}' if selectors else ''}
+
+Include:
+- Complete test file with imports
+- Setup and teardown fixtures  
+- Multiple test scenarios for main user flows
+- Proper assertions
 """
         
         try:
@@ -895,17 +919,29 @@ Generate {framework} tests for the page at: {url}
                 max_tokens=4000
             )
             
-            code = response.get("content", "")
+            # Handle response - it's a string, not a dict
+            code = response if isinstance(response, str) else response.get("content", "")
             
             # Clean markdown
-            if f"```{framework}" in code or "```typescript" in code or "```javascript" in code:
-                code = code.split("```")[1].split("```")[0]
-                if code.startswith("typescript") or code.startswith("javascript") or code.startswith("python"):
-                    code = "\n".join(code.split("\n")[1:])
+            if "```" in code:
+                parts = code.split("```")
+                for i, part in enumerate(parts):
+                    if i % 2 == 1:  # Code block
+                        # Remove language identifier
+                        lines = part.split("\n")
+                        if lines[0].strip() in ["python", "typescript", "javascript", framework, language]:
+                            code = "\n".join(lines[1:])
+                        else:
+                            code = part
+                        break
             
             # Extract selectors and scenarios
             selectors_found = self._extract_selectors_from_code(code, framework)
             test_scenarios = self._extract_test_scenarios(code)
+            
+            # Generate setup instructions and requirements
+            setup_instructions = self._generate_setup_instructions(framework, language)
+            requirements_file = self._generate_requirements(framework, language)
             
             generation_time = time.time() - start_time
             
@@ -913,6 +949,8 @@ Generate {framework} tests for the page at: {url}
                 "code": code.strip(),
                 "selectors_found": selectors_found,
                 "test_scenarios": test_scenarios,
+                "setup_instructions": setup_instructions,
+                "requirements_file": requirements_file,
                 "generation_time": generation_time
             }
             
@@ -964,6 +1002,216 @@ Generate {framework} tests for the page at: {url}
                     scenarios.append(scenario)
         
         return list(set(scenarios))[:10]  # Return up to 10 unique scenarios
+
+    def _generate_requirements(self, framework: str, language: str) -> str:
+        """Generate requirements.txt content for UI tests"""
+        
+        requirements = {
+            "playwright": """# UI Testing with Playwright
+pytest==7.4.3
+pytest-playwright==0.4.3
+playwright==1.40.0
+pytest-asyncio==0.21.1
+pytest-xdist==3.5.0
+allure-pytest==2.15.2
+
+# Additional utilities
+python-dotenv==1.0.0
+Pillow==10.1.0""",
+            "selenium": """# UI Testing with Selenium
+pytest==7.4.3
+selenium==4.15.2
+webdriver-manager==4.0.1
+pytest-asyncio==0.21.1
+pytest-xdist==3.5.0
+allure-pytest==2.15.2
+
+# Additional utilities
+python-dotenv==1.0.0
+Pillow==10.1.0""",
+            "cypress": """# UI Testing with Cypress (Node.js)
+# Note: Cypress requires Node.js and npm
+# Install via: npm install --save-dev cypress@13.6.0
+# These Python packages are for pytest integration if needed:
+pytest==7.4.3
+pytest-asyncio==0.21.1"""
+        }
+        
+        return requirements.get(framework, "# No requirements specified")
+
+    def _generate_setup_instructions(self, framework: str, language: str) -> str:
+        """Generate setup instructions for UI test execution"""
+        
+        instructions = {
+            "playwright": f"""# Инструкция по запуску UI тестов (Playwright)
+
+## 1. Установка зависимостей
+
+### Вариант А: Использование глобальной среды (рекомендуется)
+```bash
+# Активируйте глобальную UI-testing среду
+source ~/ui-testing-env/bin/activate  # Linux/Mac
+# или
+~/ui-testing-env/Scripts/activate  # Windows
+
+# Браузеры уже установлены в глобальной среде!
+```
+
+### Вариант Б: Локальная установка
+```bash
+# Установите из сгенерированного requirements.txt
+pip install -r requirements.txt
+
+# Установите браузеры
+playwright install
+```
+
+## 2. Запуск тестов
+
+```bash
+# Запустить все тесты
+pytest test_ui.py -v
+
+# Запустить с видимым браузером (headed mode)
+pytest test_ui.py --headed
+
+# Запустить в определенном браузере
+pytest test_ui.py --browser chromium
+pytest test_ui.py --browser firefox
+pytest test_ui.py --browser webkit
+
+# Запустить с замедлением (для отладки)
+pytest test_ui.py --slowmo 1000
+```
+
+## 3. Дополнительные опции
+
+```bash
+# Сделать скриншоты при падении
+pytest test_ui.py --screenshot on
+
+# Записать видео
+pytest test_ui.py --video on
+
+# Запустить в debug режиме
+PWDEBUG=1 pytest test_ui.py
+```
+""",
+            "selenium": f"""# Инструкция по запуску UI тестов (Selenium)
+
+## 1. Установка зависимостей
+
+### Вариант А: Использование глобальной среды (рекомендуется)
+```bash
+# Активируйте глобальную UI-testing среду
+source ~/ui-testing-env/bin/activate  # Linux/Mac
+# или
+~/ui-testing-env/Scripts/activate  # Windows
+
+# Все драйвера установятся автоматически при первом запуске!
+```
+
+### Вариант Б: Локальная установка
+```bash
+# Установите из сгенерированного requirements.txt
+pip install -r requirements.txt
+```
+
+## 2. Запуск тестов
+
+```bash
+# Запустить все тесты
+pytest test_ui.py -v
+
+# Запустить с конкретным браузером (настройте в conftest.py)
+pytest test_ui.py --browser chrome
+pytest test_ui.py --browser firefox
+
+# Запустить headless
+pytest test_ui.py --headless
+```
+
+## 3. Структура conftest.py
+
+Создайте файл `conftest.py` рядом с тестами:
+
+```python
+import pytest
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
+@pytest.fixture
+def browser():
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service)
+    driver.implicitly_wait(10)
+    yield driver
+    driver.quit()
+```
+""",
+            "cypress": f"""# Инструкция по запуску UI тестов (Cypress)
+
+## 1. Установка зависимостей
+
+### Вариант А: Глобальная установка (рекомендуется)
+```bash
+# Установите Cypress глобально (один раз)
+npm install -g cypress@13.6.0
+
+# Cypress уже готов к использованию!
+```
+
+### Вариант Б: Локальная установка
+```bash
+# Установите в проект
+npm install --save-dev cypress
+# или
+yarn add --dev cypress
+```
+
+## 2. Запуск тестов
+
+```bash
+# Открыть Cypress UI
+npx cypress open
+
+# Запустить headless
+npx cypress run
+
+# Запустить конкретный файл
+npx cypress run --spec "cypress/e2e/test_ui.cy.js"
+
+# Запустить в определенном браузере
+npx cypress run --browser chrome
+npx cypress run --browser firefox
+```
+
+## 3. Структура проекта
+
+```
+cypress/
+  ├── e2e/
+  │   └── test_ui.cy.js
+  ├── fixtures/
+  └── support/
+      ├── commands.js
+      └── e2e.js
+```
+
+## 4. Дополнительные опции
+
+```bash
+# Запустить с видео
+npx cypress run --video
+
+# Запустить с конфигурацией
+npx cypress run --config viewportWidth=1920,viewportHeight=1080
+```
+"""
+        }
+        
+        return instructions.get(framework, "No setup instructions available for this framework.")
 
 
 # Create singleton instance
