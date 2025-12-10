@@ -6,7 +6,6 @@ import { History } from '@/pages/History'
 import { Settings } from '@/pages/Settings'
 import { ApiTests } from '@/pages/ApiTests'
 import { UiTests } from '@/pages/UiTests'
-import { CodeRunner } from '@/pages/CodeRunner'
 import Coverage from '@/pages/Coverage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
@@ -53,14 +52,6 @@ function App() {
           element={
             <ProtectedRoute>
               <UiTests />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/run"
-          element={
-            <ProtectedRoute>
-              <CodeRunner />
             </ProtectedRoute>
           }
         />

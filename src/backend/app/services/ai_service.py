@@ -486,62 +486,117 @@ Return ONLY Python code, no markdown, no explanations."""
         endpoint_filter: Optional[List[str]] = None,
         test_types: List[str] = None
     ) -> Dict[str, Any]:
-        """Generate API tests from OpenAPI specification"""
+        """Generate API tests from OpenAPI specification - TWO-STAGE GENERATION
+        Stage 1: Generate base API tests with pytest/requests
+        Stage 2: Wrap with Allure decorators
+        """
         start_time = time.time()
-
-        system_prompt = """
-        You are an expert API testing engineer.
-        Analyze the OpenAPI specification and generate comprehensive API tests.
-
-        Guidelines:
-        1. Generate tests for all HTTP methods
-        2. Include positive (happy path) test cases
-        3. Include negative test cases (invalid data, missing fields)
-        4. Test edge cases and boundary values
-        5. Include authentication/authorization tests
-        6. Validate response status codes and schemas
-        """
-
-        user_prompt = f"""
-        Generate API tests for the following OpenAPI specification:
-
-        ```yaml
-        {openapi_spec}
-        ```
-
-        {f'Endpoints to focus on: {endpoint_filter}' if endpoint_filter else ''}
-
-        {f'Test types to generate: {test_types}' if test_types else ''}
-
-        Generate comprehensive test cases covering all specified endpoints.
-        """
 
         try:
             # Parse OpenAPI first for context
             parsed_spec = await self._parse_openapi_spec(openapi_spec)
 
-            # Use schema-guided reasoning
-            result = await self.llm_client.chat_completion(
+            # ============ STAGE 1: Generate base API tests ============
+            self.logger.info("STAGE 1: Generating base API tests")
+
+            stage1_system = """You are an expert API testing engineer specializing in pytest and requests library.
+Generate clean, functional API tests WITHOUT Allure decorators.
+Focus on HTTP requests, response validation, and pytest assertions."""
+
+            stage1_user = f"""Generate pytest API tests for this OpenAPI specification:
+
+```yaml
+{openapi_spec}
+```
+
+{f'Focus on endpoints: {endpoint_filter}' if endpoint_filter else ''}
+{f'Test types: {test_types}' if test_types else 'Include: positive, negative, edge cases'}
+
+Requirements:
+1. Import pytest, requests (NO Allure yet)
+2. Create test class
+3. For each endpoint generate tests for:
+   - Happy path (valid requests, 200/201 responses)
+   - Validation (invalid data, 400/422 responses)
+   - Authorization (401/403 if auth required)
+   - Edge cases (boundary values)
+4. Use pytest fixtures for setup
+5. Clear assertions on status codes and response schemas
+
+Return ONLY Python code, no markdown, no explanations."""
+
+            base_code = await self.llm_client.chat_completion(
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "system", "content": stage1_system},
+                    {"role": "user", "content": stage1_user}
                 ],
-                response_schema=SchemaGuidedPrompt.API_TEST_SCHEMA
+                temperature=0.3,
+                max_tokens=8000
             )
 
-            # Generate Python code
-            if isinstance(result, dict):
-                code = await self._generate_api_code_from_structure(result, parsed_spec)
-            else:
-                code = await self._generate_api_code_directly(openapi_spec)
-                result = {"endpoints": []}
+            # Clean code
+            if isinstance(base_code, str):
+                if "```python" in base_code:
+                    base_code = base_code.split("```python")[1].split("```")[0].strip()
+                elif "```" in base_code:
+                    base_code = base_code.split("```")[1].split("```")[0].strip()
 
+            self.logger.info("STAGE 1 completed", code_length=len(base_code))
+
+            # ============ STAGE 2: Wrap with Allure decorators ============
+            self.logger.info("STAGE 2: Wrapping with Allure decorators")
+
+            stage2_system = """You are an expert in Allure test reporting.
+Add Allure decorators to existing API tests WITHOUT changing test logic."""
+
+            stage2_user = f"""Add Allure decorators to this API test code:
+
+```python
+{base_code}
+```
+
+Requirements:
+1. Add imports: allure, allure_commons.types.Severity
+2. Add class decorators:
+   - @allure.feature("API Testing")
+   - @allure.story("REST API Endpoints")
+   - @allure.tag("api", "generated_by_ai")
+3. For EACH test method add:
+   - @allure.title("Endpoint: {{method}} {{path}} - {{scenario}}")
+   - @allure.severity(Severity.CRITICAL for auth/happy path, HIGH for validation, NORMAL for edge cases)
+4. Wrap key steps:
+   - with allure.step("Send {{method}} request to {{endpoint}}"): ...
+   - with allure.step("Validate status code"): ...
+   - with allure.step("Validate response schema"): ...
+
+Keep ALL test logic unchanged. Return ONLY Python code."""
+
+            final_code = await self.llm_client.chat_completion(
+                messages=[
+                    {"role": "system", "content": stage2_system},
+                    {"role": "user", "content": stage2_user}
+                ],
+                temperature=0.2,
+                max_tokens=8000
+            )
+
+            # Clean final code
+            if isinstance(final_code, str):
+                if "```python" in final_code:
+                    final_code = final_code.split("```python")[1].split("```")[0].strip()
+                elif "```" in final_code:
+                    final_code = final_code.split("```")[1].split("```")[0].strip()
+
+            self.logger.info("STAGE 2 completed", final_code_length=len(final_code))
+
+            # Extract endpoints covered
+            endpoints_covered = self._extract_endpoints_from_code(final_code)
             generation_time = time.time() - start_time
 
             return {
-                "code": code,
-                "endpoints_covered": [ep.get("path") for ep in result.get("endpoints", [])],
-                "test_matrix": self._build_test_matrix(result),
+                "code": final_code,
+                "endpoints_covered": endpoints_covered,
+                "test_matrix": self._build_api_test_matrix(final_code),
                 "generation_time": generation_time
             }
 
@@ -853,7 +908,11 @@ Use requests library. Include:
         selectors: Optional[Dict[str, str]] = None,
         framework: str = "playwright"
     ) -> Dict[str, Any]:
-        """Generate UI/E2E tests from HTML or URL with setup instructions"""
+        """Generate UI/E2E tests - TWO-STAGE + ADAPTIVE GENERATION
+        Stage 0 (if URL): Analyze website to discover pages/links
+        Stage 1: Generate base UI tests
+        Stage 2: Wrap with Allure decorators (Python only)
+        """
         start_time = time.time()
         
         # Language mapping
@@ -864,25 +923,50 @@ Use requests library. Include:
         }
         language = language_map.get(framework, "python")
         
-        system_prompt = f"""
-You are an expert in UI/E2E testing with {framework}.
-Generate comprehensive {language} UI tests based on the provided HTML or URL.
+        # ============ STAGE 0: ADAPTIVE URL ANALYSIS (if URL provided) ============
+        discovered_urls = []
+        site_structure = {}
+        
+        if input_method == "url" and url:
+            self.logger.info("STAGE 0: Analyzing website structure", url=url)
+            try:
+                site_analysis = await self._analyze_website_structure(url)
+                discovered_urls = site_analysis.get("discovered_urls", [])
+                site_structure = site_analysis.get("structure", {})
+                self.logger.info(
+                    "Website analysis completed",
+                    pages_found=len(discovered_urls),
+                    structure_depth=len(site_structure)
+                )
+            except Exception as e:
+                self.logger.warning("Website analysis failed, continuing with single URL", error=str(e))
+                discovered_urls = [url]
+        
+        # ============ STAGE 1: Generate base UI tests ============
+        self.logger.info("STAGE 1: Generating base UI tests", framework=framework)
+        
+        stage1_system = f"""You are an expert in UI/E2E testing with {framework}.
+Generate clean, functional UI tests WITHOUT Allure decorators (for Python) or reporting tools.
+Focus on test logic, element interactions, and {framework} best practices."""
+        
+        # Build adaptive prompt based on discovered URLs
+        adaptive_context = ""
+        if discovered_urls and len(discovered_urls) > 1:
+            adaptive_context = f"""
 
-Guidelines:
-1. Identify interactive elements (buttons, inputs, forms, links)
-2. Create tests for user workflows (login, navigation, form submission)
-3. Include assertions for page elements and content
-4. Add proper waits and error handling
-5. Follow {framework} best practices
-6. Use pytest for Python frameworks
-7. Include proper imports and setup/teardown
+WEBSITE STRUCTURE DISCOVERED:
+The target website has {len(discovered_urls)} pages:
+{chr(10).join(f"- {u}" for u in discovered_urls[:10])}
 
-IMPORTANT: Return ONLY the test code without any explanations or markdown.
+Generate SEPARATE test scenarios for DIFFERENT pages:
+- Create specific tests for each unique page URL
+- Test page-specific functionality (forms, buttons, navigation on that page)
+- Verify page-specific content and elements
+- Include inter-page navigation tests
 """
         
         if input_method == "html":
-            user_prompt = f"""
-Generate {framework} tests in {language} for this HTML:
+            stage1_user = f"""Generate {framework} tests in {language} for this HTML:
 
 ```html
 {html_content}
@@ -891,53 +975,108 @@ Generate {framework} tests in {language} for this HTML:
 {f'Focus on these selectors: {selectors}' if selectors else ''}
 
 Include:
-- Complete test file with imports
+- Complete test file with imports ({framework}, pytest for Python)
 - Setup and teardown fixtures
 - Multiple test scenarios
 - Proper assertions
-"""
+- NO Allure decorators yet
+
+Return ONLY code, no markdown, no explanations."""
         else:
-            user_prompt = f"""
-Generate {framework} tests in {language} for the page at: {url}
+            stage1_user = f"""Generate {framework} tests in {language} for the website.
+
+BASE URL: {url}
+{adaptive_context}
 
 {f'Focus on these selectors: {selectors}' if selectors else ''}
 
 Include:
-- Complete test file with imports
-- Setup and teardown fixtures  
-- Multiple test scenarios for main user flows
+- Complete test file with imports ({framework}, pytest for Python)
+- Setup and teardown fixtures
+- Multiple test scenarios covering DIFFERENT pages from the site
+- Each test should target a SPECIFIC URL from the discovered pages
 - Proper assertions
-"""
+- NO Allure decorators yet
+
+Return ONLY code, no markdown, no explanations."""
         
         try:
-            response = await self.llm_client.chat_completion(
+            base_code = await self.llm_client.chat_completion(
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "system", "content": stage1_system},
+                    {"role": "user", "content": stage1_user}
                 ],
                 temperature=0.3,
                 max_tokens=4000
             )
             
-            # Handle response - it's a string, not a dict
-            code = response if isinstance(response, str) else response.get("content", "")
+            # Clean code
+            if isinstance(base_code, str):
+                if "```" in base_code:
+                    parts = base_code.split("```")
+                    for i, part in enumerate(parts):
+                        if i % 2 == 1:  # Code block
+                            lines = part.split("\n")
+                            if lines[0].strip() in ["python", "typescript", "javascript", framework, language]:
+                                base_code = "\n".join(lines[1:])
+                            else:
+                                base_code = part
+                            break
             
-            # Clean markdown
-            if "```" in code:
-                parts = code.split("```")
-                for i, part in enumerate(parts):
-                    if i % 2 == 1:  # Code block
-                        # Remove language identifier
-                        lines = part.split("\n")
-                        if lines[0].strip() in ["python", "typescript", "javascript", framework, language]:
-                            code = "\n".join(lines[1:])
-                        else:
-                            code = part
-                        break
+            self.logger.info("STAGE 1 completed", code_length=len(base_code))
+            
+            # ============ STAGE 2: Wrap with Allure (Python only) ============
+            final_code = base_code
+            
+            if framework in ["playwright", "selenium"]:  # Python frameworks
+                self.logger.info("STAGE 2: Wrapping with Allure decorators")
+                
+                stage2_system = """You are an expert in Allure test reporting.
+Add Allure decorators to existing UI tests WITHOUT changing test logic."""
+                
+                stage2_user = f"""Add Allure decorators to this {framework} test code:
+
+```python
+{base_code}
+```
+
+Requirements:
+1. Add imports: allure, allure_commons.types.Severity
+2. Add class decorators:
+   - @allure.feature("UI Testing")
+   - @allure.story("User Workflows")
+   - @allure.tag("ui", "e2e", "generated_by_ai")
+3. For EACH test method add:
+   - @allure.title("Test {{page/functionality}}")
+   - @allure.severity(Severity.CRITICAL for login/main flows, HIGH for forms, NORMAL for navigation)
+4. Wrap test steps:
+   - with allure.step("Navigate to {{url}}"): ...
+   - with allure.step("Interact with {{element}}"): ...
+   - with allure.step("Verify {{condition}}"): ...
+
+Keep ALL test logic unchanged. Return ONLY Python code, no markdown."""
+                
+                final_code = await self.llm_client.chat_completion(
+                    messages=[
+                        {"role": "system", "content": stage2_system},
+                        {"role": "user", "content": stage2_user}
+                    ],
+                    temperature=0.2,
+                    max_tokens=4000
+                )
+                
+                # Clean final code
+                if isinstance(final_code, str):
+                    if "```python" in final_code:
+                        final_code = final_code.split("```python")[1].split("```")[0].strip()
+                    elif "```" in final_code:
+                        final_code = final_code.split("```")[1].split("```")[0].strip()
+                
+                self.logger.info("STAGE 2 completed", final_code_length=len(final_code))
             
             # Extract selectors and scenarios
-            selectors_found = self._extract_selectors_from_code(code, framework)
-            test_scenarios = self._extract_test_scenarios(code)
+            selectors_found = self._extract_selectors_from_code(final_code, framework)
+            test_scenarios = self._extract_test_scenarios(final_code)
             
             # Generate setup instructions and requirements
             setup_instructions = self._generate_setup_instructions(framework, language)
@@ -945,8 +1084,8 @@ Include:
             
             generation_time = time.time() - start_time
             
-            return {
-                "code": code.strip(),
+            result = {
+                "code": final_code.strip(),
                 "selectors_found": selectors_found,
                 "test_scenarios": test_scenarios,
                 "setup_instructions": setup_instructions,
@@ -954,9 +1093,75 @@ Include:
                 "generation_time": generation_time
             }
             
+            # Add discovered URLs if adaptive analysis was performed
+            if discovered_urls:
+                result["discovered_urls"] = discovered_urls
+                result["pages_tested"] = len(discovered_urls)
+            
+            return result
+            
         except Exception as e:
             self.logger.error("Failed to generate UI tests", error=str(e))
             raise
+
+    async def _analyze_website_structure(self, url: str) -> Dict[str, Any]:
+        """Analyze website structure to discover pages and links (adaptive generation)"""
+        try:
+            import aiohttp
+            from bs4 import BeautifulSoup
+            from urllib.parse import urljoin, urlparse
+            
+            discovered_urls = set()
+            base_domain = urlparse(url).netloc
+            
+            async with aiohttp.ClientSession() as session:
+                # Fetch main page
+                async with session.get(url, timeout=10) as response:
+                    if response.status == 200:
+                        html = await response.text()
+                        soup = BeautifulSoup(html, 'html.parser')
+                        
+                        # Find all links
+                        for link in soup.find_all('a', href=True):
+                            href = link['href']
+                            full_url = urljoin(url, href)
+                            parsed = urlparse(full_url)
+                            
+                            # Only include same-domain links
+                            if parsed.netloc == base_domain:
+                                # Clean URL (remove fragments, query params for cleaner list)
+                                clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                                if clean_url.endswith('/'):
+                                    clean_url = clean_url[:-1]
+                                discovered_urls.add(clean_url)
+                        
+                        # Limit to reasonable number
+                        discovered_urls = list(discovered_urls)[:15]
+                        
+                        # Categorize pages
+                        structure = {
+                            "total_links": len(discovered_urls),
+                            "main_page": url,
+                            "subpages": [u for u in discovered_urls if u != url]
+                        }
+                        
+                        return {
+                            "discovered_urls": [url] + structure["subpages"],
+                            "structure": structure
+                        }
+            
+            # Fallback if analysis fails
+            return {
+                "discovered_urls": [url],
+                "structure": {"total_links": 1, "main_page": url, "subpages": []}
+            }
+            
+        except Exception as e:
+            self.logger.warning("Website structure analysis failed", error=str(e))
+            return {
+                "discovered_urls": [url],
+                "structure": {"total_links": 1, "main_page": url, "subpages": []}
+            }
 
     def _extract_selectors_from_code(self, code: str, framework: str) -> List[str]:
         """Extract selectors from generated code"""
@@ -1212,6 +1417,45 @@ npx cypress run --config viewportWidth=1920,viewportHeight=1080
         }
         
         return instructions.get(framework, "No setup instructions available for this framework.")
+
+    def _extract_endpoints_from_code(self, code: str) -> List[str]:
+        """Extract API endpoints from generated test code"""
+        import re
+        endpoints = []
+        
+        # Find URL patterns in requests calls
+        patterns = [
+            r'requests\.(get|post|put|delete|patch)\(["\']([^"\']+)["\']',
+            r'url\s*=\s*["\']([^"\']+)["\']',
+            r'BASE_URL\s*\+\s*["\']([^"\']+)["\']'
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, code)
+            for match in matches:
+                endpoint = match if isinstance(match, str) else match[-1]
+                if endpoint and endpoint.startswith('/'):
+                    endpoints.append(endpoint)
+        
+        return list(set(endpoints))[:20]  # Return up to 20 unique endpoints
+
+    def _build_api_test_matrix(self, code: str) -> Dict[str, List[str]]:
+        """Build test matrix from generated API test code"""
+        import re
+        matrix = {}
+        
+        # Find test functions with their endpoints
+        test_pattern = r'def (test_\w+)\([^)]*\):[\s\S]*?url.*?["\']([^"\']+)["\']'
+        matches = re.findall(test_pattern, code)
+        
+        for test_name, endpoint in matches:
+            if endpoint not in matrix:
+                matrix[endpoint] = []
+            # Clean test name
+            scenario = test_name.replace('test_', '').replace('_', ' ').title()
+            matrix[endpoint].append(scenario)
+        
+        return matrix
 
 
 # Create singleton instance

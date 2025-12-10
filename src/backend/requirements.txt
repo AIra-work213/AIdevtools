@@ -28,6 +28,7 @@ chardet==5.2.0
 # HTTP Client
 httpx==0.25.2
 aiohttp==3.9.1
+beautifulsoup4==4.12.2
 
 # Auth & Security
 python-jose[cryptography]==3.3.0
