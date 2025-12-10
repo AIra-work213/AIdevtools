@@ -498,8 +498,8 @@ export function Chat() {
                 </div>
 
                 {executionResult.allure_results ? (
-                  /* Allure Results - Compact */
                   <>
+                    {/* Allure Results - Compact */}
                     {/* Test Summary */}
                     <div className="grid grid-cols-5 gap-2 mb-3">
                       <div className="rounded bg-gray-100 dark:bg-gray-700 p-2 text-center">
@@ -562,8 +562,8 @@ export function Chat() {
                     )}
                   </>
                 ) : (
-                  /* Non-Allure Results */
                   <>
+                    {/* Non-Allure Results */}
                     {/* Status */}
                     <div className="mb-3">
                       {executionResult.is_valid && executionResult.can_execute ? (
