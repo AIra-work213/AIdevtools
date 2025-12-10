@@ -41,6 +41,7 @@ interface ApiTestResponse {
 
 export function ApiTests() {
   const [openApiSpec, setOpenApiSpec] = useState('')
+  const [sourceCode, setSourceCode] = useState('')
   const [endpointFilter] = useState<string[]>([])
   const [testTypes, setTestTypes] = useState<string[]>(['positive', 'negative', 'boundary'])
   const [isGenerating, setIsGenerating] = useState(false)
@@ -128,7 +129,7 @@ export function ApiTests() {
         },
         body: JSON.stringify({
           code: result.code,
-          source_code: null,
+          source_code: sourceCode.trim() || null,
           timeout: 30,
           run_with_pytest: hasAllure,
         }),
@@ -260,6 +261,22 @@ export function ApiTests() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* Source Code Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Исходный код (опционально):
+              </label>
+              <textarea
+                value={sourceCode}
+                onChange={(e) => setSourceCode(e.target.value)}
+                placeholder="Вставьте код API, который будет тестироваться (классы, функции, эндпоинты)..."
+                className="w-full h-32 p-3 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-vertical focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                💡 Добавьте FastAPI/Flask роутеры, модели или другой код для улучшения генерации тестов
+              </p>
             </div>
 
             {/* Generate Button */}

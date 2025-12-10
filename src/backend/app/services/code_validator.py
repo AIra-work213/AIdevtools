@@ -146,7 +146,8 @@ class CodeValidator:
                     temp_file,
                     "-v",
                     f"--alluredir={allure_results_path}",
-                    "--tb=short"
+                    "--tb=short",
+                    "-p", "no:warnings"  # Suppress warnings for cleaner output
                 ]
                 
                 logger.info("Running pytest with Allure", allure_dir=str(allure_results_path))
@@ -164,10 +165,38 @@ class CodeValidator:
             
             execution_time = time.time() - start_time
             execution_output = result.stdout
+            
+            # Combine stdout and stderr for better error visibility
+            if result.stderr:
+                full_output = f"{execution_output}\n\nSTDERR:\n{result.stderr}"
+            else:
+                full_output = execution_output
 
             if result.returncode != 0:
+                # Pytest return codes:
+                # 0: All tests passed
+                # 1: Tests failed
+                # 2: No tests collected or internal error
+                # 3: Internal error
+                # 4: pytest command line usage error
+                # 5: No tests collected
+                
+                if result.returncode == 2:
+                    runtime_errors.append("pytest: No tests collected. Tests may have syntax errors or missing dependencies.")
+                elif result.returncode == 5:
+                    runtime_errors.append("pytest: No tests found in file.")
+                else:
+                    runtime_errors.append(f"pytest exit code {result.returncode}")
+                
                 runtime_errors.append(result.stderr)
                 can_execute = False
+                
+                logger.warning(
+                    "Code execution failed",
+                    return_code=result.returncode,
+                    stderr_length=len(result.stderr),
+                    stdout_length=len(result.stdout)
+                )
             else:
                 can_execute = True
 
@@ -201,7 +230,7 @@ class CodeValidator:
             can_execute=can_execute,
             syntax_errors=syntax_errors,
             runtime_errors=runtime_errors,
-            execution_output=execution_output,
+            execution_output=full_output if run_with_pytest else execution_output,
             execution_time=execution_time,
             allure_report_path=str(allure_results_path) if allure_results_path else None,
             allure_results=allure_results,
