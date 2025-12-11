@@ -966,18 +966,43 @@ Generate SEPARATE test scenarios for DIFFERENT pages:
 """
         
         if input_method == "html":
+            # Extract real content from HTML
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            title = soup.find('title')
+            headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3']) if h.get_text().strip()]
+            buttons = [btn.get_text().strip() for btn in soup.find_all(['button', 'input[type="button"]', 'input[type="submit"]']) if btn.get_text().strip() or btn.get('value')]
+            inputs = [inp.get('placeholder', '') for inp in soup.find_all('input') if inp.get('placeholder')]
+            links = [a.get_text().strip() for a in soup.find_all('a') if a.get_text().strip()]
+
+            real_content = f"""
+HTML CONTENT ANALYSIS:
+- Title: {title.get_text().strip() if title else 'No title'}
+- Headings: {headings[:5]}
+- Buttons: {buttons[:5]}
+- Input placeholders: {inputs[:5]}
+- Link texts: {links[:5]}
+"""
+
             stage1_user = f"""Generate {framework} tests in {language} for this HTML:
 
 ```html
 {html_content}
 ```
 
+{real_content}
 {f'Focus on these selectors: {selectors}' if selectors else ''}
+
+CRITICAL REQUIREMENTS:
+1. ONLY test elements that ACTUALLY exist in the HTML
+2. Use the ACTUAL text values from the analysis above
+3. DO NOT invent elements or content
 
 Include:
 - Complete test file with imports ({framework}, pytest for Python)
-- Setup and teardown fixtures
-- Multiple test scenarios
+- Setup and teardown fixtures with HEADLESS browser configuration
+- Realistic test scenarios for EXISTING elements
 - Proper assertions
 - NO Allure decorators yet
 
@@ -1002,21 +1027,73 @@ driver = webdriver.Chrome(options=options)
 ```
 Use this configuration in ALL test fixtures!"""
 
+            # Предварительно получаем реальный контент страницы
+            real_page_content = ""
+            try:
+                import aiohttp
+                from bs4 import BeautifulSoup
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, timeout=10) as response:
+                        if response.status == 200:
+                            html = await response.text()
+                            soup = BeautifulSoup(html, 'html.parser')
+                            title = soup.find('title')
+                            headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
+
+                            # Собираем ВСЕ ссылки, включая внешние
+                            all_links = []
+                            for a in soup.find_all('a'):
+                                text = a.get_text().strip()
+                                href = a.get('href', '')
+                                if text:
+                                    all_links.append({"text": text, "href": href})
+
+                            links_text = [link["text"] for link in all_links[:10]]
+                            links_with_href = [{"text": link["text"], "href": link["href"]} for link in all_links[:5]]
+
+                            paragraphs = [p.get_text().strip()[:100] for p in soup.find_all('p') if p.get_text().strip()]
+
+                            real_page_content = f"""
+ACTUAL PAGE CONTENT ANALYSIS:
+- Page Title: {title.get_text().strip() if title else 'No title found'}
+- Main Headings: {headings[:5]}
+- Link Texts: {links_text}
+- Link Details (text -> href): {links_with_href}
+- Paragraph Excerpts: {paragraphs[:3]}
+
+IMPORTANT: The link text is EXACTLY "{links_text[0] if links_text else 'No links found'}" - use this exact text in tests!
+"""
+            except Exception as e:
+                self.logger.warning("Failed to fetch real page content", error=str(e))
+                real_page_content = "Could not fetch real page content"
+
             stage1_user = f"""Generate {framework} tests in {language} for the website.
 
 BASE URL: {url}
+{real_page_content}
 {adaptive_context}
 {headless_config}
+
+CRITICAL REQUIREMENTS:
+1. ONLY test elements that ACTUALLY exist on the page
+2. ONLY test the main URL ({url}) unless other pages were actually discovered
+3. Use the ACTUAL text content from the page analysis above
+4. DO NOT invent elements, pages, or content that doesn't exist
+5. If the page has minimal content (like example.com), create simple, realistic tests
+6. For link tests: Use the EXACT link text from "Link Texts" above (e.g., "Learn more" not "More information...")
+7. For link href: Use the EXACT href from "Link Details" above (e.g., "https://iana.org/domains/example")
+8. For external links: ONLY verify the link attributes (text, href), DO NOT test navigation to avoid timeout issues
 
 {f'Focus on these selectors: {selectors}' if selectors else ''}
 
 Include:
 - Complete test file with imports ({framework}, pytest for Python)
 - Setup and teardown fixtures with HEADLESS browser configuration
-- Multiple test scenarios covering DIFFERENT pages from the site
-- Each test should target a SPECIFIC URL from the discovered pages
-- Proper assertions
+- Realistic test scenarios based on ACTUAL page content
+- Proper assertions for EXISTING elements
 - NO Allure decorators yet
+
+Note: If adding Allure later, use allure.severity_level.NORMAL/HIGH/CRITICAL (not Severity.NORMAL)
 
 Return ONLY code, no markdown, no explanations."""
         
@@ -1064,21 +1141,31 @@ Add Allure decorators to existing UI tests WITHOUT changing test logic."""
 {base_code}
 ```
 
-Requirements:
-1. Add imports: allure, allure_commons.types.Severity
-2. Add class decorators:
+CRITICAL REQUIREMENTS:
+1. DO NOT change any test logic or assertions
+2. DO NOT modify element locators or URLs
+3. ONLY add Allure decorators and step wrappers
+4. Keep ALL existing functionality exactly the same
+
+Add:
+1. Imports: allure, allure_commons.types.Severity
+   Note: Use allure.severity_level for severity values (e.g., allure.severity_level.NORMAL)
+2. Class decorators:
    - @allure.feature("UI Testing")
    - @allure.story("User Workflows")
    - @allure.tag("ui", "e2e", "generated_by_ai")
 3. For EACH test method add:
-   - @allure.title("Test {{page/functionality}}")
-   - @allure.severity(Severity.CRITICAL for login/main flows, HIGH for forms, NORMAL for navigation)
-4. Wrap test steps:
-   - with allure.step("Navigate to {{url}}"): ...
-   - with allure.step("Interact with {{element}}"): ...
-   - with allure.step("Verify {{condition}}"): ...
+   - @allure.title("Descriptive test title")
+   - @allure.severity(allure.severity_level.NORMAL for most tests, allure.severity_level.CRITICAL for critical flows)
+4. Wrap test steps with allure.step():
+   - Navigation: "Navigate to {{url}}"
+   - Actions: "Click {{element}}", "Enter text in {{field}}"
+   - Verifications: "Verify {{condition}}"
 
-Keep ALL test logic unchanged. Return ONLY Python code, no markdown."""
+IMPORTANT: Do NOT change test URLs, element selectors, or assertions.
+The tests should work exactly the same as before, just with Allure reporting.
+
+Return ONLY Python code, no markdown."""
                 
                 final_code = await self.llm_client.chat_completion(
                     messages=[
