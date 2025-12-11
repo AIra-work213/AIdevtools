@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { PaperAirplaneIcon, DocumentIcon, CogIcon, BookmarkIcon, ClipboardDocumentIcon, PlayIcon } from '@heroicons/react/24/outline'
+import { PaperAirplaneIcon, DocumentIcon, CogIcon, BookmarkIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline'
 import { ChatInterface } from '@/components/chat/ChatInterface'
 import { CodeEditor } from '@/components/editor/CodeEditor'
 import { GenerationSettings } from '@/components/chat/GenerationSettings'
@@ -19,39 +19,14 @@ const messageSchema = z.object({
 
 type MessageFormData = z.infer<typeof messageSchema>
 
-interface ExecutionResult {
-  is_valid: boolean
-  can_execute: boolean
-  syntax_errors: string[]
-  runtime_errors: string[]
-  execution_output: string | null
-  execution_time: number | null
-  allure_report_path: string | null
-  allure_results: {
-    total_tests: number
-    passed: number
-    failed: number
-    broken: number
-    skipped: number
-    tests: Array<{
-      name: string
-      status: string
-      duration: number
-      fullName: string
-    }>
-  } | null
-}
 
 export function Chat() {
   const [generatedCode, setGeneratedCode] = useState('')
-  const [sourceCode, setSourceCode] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [chatTitle, setChatTitle] = useState('')
-  const [isExecuting, setIsExecuting] = useState(false)
-  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { messages, isLoading, sendMessage, clearChat, currentResponse, generationProgress } = useChatStore()
@@ -177,60 +152,7 @@ export function Chat() {
     toast.success('Диалог сохранен')
   }
 
-  const handleExecuteCode = async () => {
-    if (!generatedCode.trim()) {
-      toast.error('Нет кода для выполнения')
-      return
-    }
-
-    setIsExecuting(true)
-    setExecutionResult(null)
-
-    try {
-      // Detect if code has Allure decorators
-      const hasAllure = generatedCode.includes('@allure') || generatedCode.includes('import allure')
-
-      const response = await fetch('/api/v1/generate/execute', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: generatedCode,
-          source_code: sourceCode.trim() || null,
-          timeout: 30,  // Longer timeout for pytest
-          run_with_pytest: hasAllure,  // Auto-enable pytest if Allure detected
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Ошибка выполнения кода')
-      }
-
-      const result = await response.json()
-      setExecutionResult(result)
-
-      // Enhanced toast notifications
-      if (result.can_execute) {
-        if (result.allure_results) {
-          const { passed, failed, total_tests } = result.allure_results
-          toast.success(`✅ Тесты выполнены: ${passed}/${total_tests} пройдено (${result.execution_time?.toFixed(2)}с)`)
-        } else {
-          toast.success(`✅ Код выполнен успешно за ${result.execution_time?.toFixed(2)}с`)
-        }
-      } else if (result.syntax_errors.length > 0) {
-        toast.error('❌ Синтаксические ошибки в коде')
-      } else {
-        toast.error('❌ Ошибки выполнения')
-      }
-    } catch (error) {
-      console.error('Execution error:', error)
-      toast.error('Произошла ошибка при выполнении кода')
-    } finally {
-      setIsExecuting(false)
-    }
-  }
-
+  
   return (
     <div className="flex h-full gap-6">
       {/* Chat Section */}
@@ -258,19 +180,7 @@ export function Chat() {
               >
                 <ClipboardDocumentIcon className="h-5 w-5" />
               </button>
-              <button
-                onClick={handleExecuteCode}
-                className="btn-ghost p-2"
-                title="Запустить код"
-                disabled={!generatedCode || isExecuting}
-              >
-                {isExecuting ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
-                ) : (
-                  <PlayIcon className="h-5 w-5" />
-                )}
-              </button>
-              <button
+                            <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="btn-ghost p-2"
                 title="Настройки генерации (Ctrl+,)"
@@ -457,151 +367,12 @@ export function Chat() {
       {/* Code Editor Section */}
       {generatedCode && (
         <div className="w-1/2 flex flex-col gap-4">
-          {/* Source Code Input */}
-          <div className="card">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Исходный код для тестирования (опционально)
-            </h3>
-            <textarea
-              value={sourceCode}
-              onChange={(e) => setSourceCode(e.target.value)}
-              placeholder="Вставьте код, который будут тестировать сгенерированные тесты..."
-              className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm resize-none"
-            />
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              💡 Добавьте классы, функции или API, которые тестируются в сгенерированном коде
-            </p>
-          </div>
-
-          {/* Generated Code Editor */}
           <div className="card flex-1 flex flex-col">
             <CodeEditor
               code={generatedCode}
               language="python"
               title="Сгенерированный код"
             />
-            
-            {/* Execution Results - Compact Design */}
-            {executionResult && (
-              <div className="mt-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {executionResult.allure_results ? 'Отчет Allure' : 'Результаты выполнения'}
-                  </h3>
-                  <button
-                    onClick={() => setExecutionResult(null)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {executionResult.allure_results ? (
-                  <>
-                    <div className="grid grid-cols-5 gap-2 mb-3">
-                      <div className="rounded bg-gray-100 dark:bg-gray-700 p-2 text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{executionResult.allure_results.total_tests}</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Всего</div>
-                      </div>
-                      <div className="rounded bg-green-50 dark:bg-green-900/20 p-2 text-center">
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-400">{executionResult.allure_results.passed}</div>
-                        <div className="text-xs text-green-700 dark:text-green-400">Пройдено</div>
-                      </div>
-                      <div className="rounded bg-red-50 dark:bg-red-900/20 p-2 text-center">
-                        <div className="text-2xl font-bold text-red-700 dark:text-red-400">{executionResult.allure_results.failed}</div>
-                        <div className="text-xs text-red-700 dark:text-red-400">Провалено</div>
-                      </div>
-                      <div className="rounded bg-orange-50 dark:bg-orange-900/20 p-2 text-center">
-                        <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">{executionResult.allure_results.broken}</div>
-                        <div className="text-xs text-orange-700 dark:text-orange-400">Сломано</div>
-                      </div>
-                      <div className="rounded bg-gray-100 dark:bg-gray-700 p-2 text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{executionResult.allure_results.skipped}</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Пропущено</div>
-                      </div>
-                    </div>
-
-                    {/* Individual Tests - Collapsible */}
-                    {executionResult.allure_results.tests.length > 0 && (
-                      <details open className="group">
-                        <summary className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 cursor-pointer hover:text-gray-900 dark:hover:text-white list-none">
-                          <span className="inline-block group-open:rotate-90 transition-transform mr-1">▶</span>
-                          Детали тестов ({executionResult.allure_results.tests.length})
-                        </summary>
-                        <div className="max-h-64 overflow-y-auto space-y-1 mt-2">
-                          {executionResult.allure_results.tests.map((test, idx) => (
-                            <div
-                              key={idx}
-                              className={`rounded p-2 text-xs border-l-4 ${
-                                test.status === 'passed'
-                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/10'
-                                  : test.status === 'failed'
-                                  ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                                  : test.status === 'broken'
-                                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10'
-                                  : 'border-gray-500 bg-gray-50 dark:bg-gray-700'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-gray-900 dark:text-white truncate flex-1">{test.name}</span>
-                                <span className="text-gray-600 dark:text-gray-400 text-xs ml-2 whitespace-nowrap">{(test.duration / 1000).toFixed(2)}s</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-
-                    {executionResult.allure_report_path && (
-                      <div className="mt-3 rounded bg-blue-50 p-2 text-xs text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                        <strong>Путь к отчету:</strong> {executionResult.allure_report_path}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="mb-3">
-                      {executionResult.is_valid && executionResult.can_execute ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
-                          ✅ Успешно {executionResult.execution_time && `(${executionResult.execution_time.toFixed(2)}s)`}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
-                          ❌ Ошибка
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Errors - Collapsible */}
-                    {(executionResult.syntax_errors?.length > 0 || executionResult.runtime_errors?.length > 0) && (
-                      <details className="mb-3">
-                        <summary className="text-xs font-medium text-red-600 dark:text-red-400 cursor-pointer list-none">
-                          <span className="inline-block">▶</span> Ошибки ({(executionResult.syntax_errors?.length || 0) + (executionResult.runtime_errors?.length || 0)})
-                        </summary>
-                        <div className="max-h-48 overflow-y-auto rounded bg-red-50 dark:bg-red-900/20 p-2 text-xs font-mono text-red-900 dark:text-red-200 mt-2">
-                          {executionResult.syntax_errors?.map((err, i) => <div key={i}>{err}</div>)}
-                          {executionResult.runtime_errors?.map((err, i) => <div key={i}>{err}</div>)}
-                        </div>
-                      </details>
-                    )}
-
-                    {/* Output - Collapsible */}
-                    {executionResult.execution_output && (
-                      <details>
-                        <summary className="text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer list-none">
-                          <span className="inline-block">▶</span> Вывод
-                        </summary>
-                        <div className="max-h-48 overflow-y-auto rounded bg-gray-900 p-2 text-xs font-mono text-green-400 mt-2">
-                          <pre className="whitespace-pre-wrap">{executionResult.execution_output}</pre>
-                        </div>
-                      </details>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
       )}

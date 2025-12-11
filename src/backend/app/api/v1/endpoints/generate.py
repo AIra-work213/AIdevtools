@@ -15,7 +15,6 @@ from app.schemas.test import (
     ValidationResult
 )
 from app.services.ai_service import AIService
-from app.services.code_validator import CodeValidator, get_code_validator
 from app.core.deps import RateLimiter, get_current_user, get_current_user_optional
 
 logger = structlog.get_logger(__name__)
@@ -39,15 +38,13 @@ async def generate_manual_tests(
 
     try:
         ai_service = AIService()
-        validator = get_code_validator()
         username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.info(
-            "Generating manual tests with validation",
+            "Generating manual tests",
             user=username,
             requirements_length=len(request.requirements)
         )
 
-        # Generate tests (two-stage: framework + Allure)
         result = await ai_service.generate_manual_tests(
             requirements=request.requirements,
             metadata=request.metadata.model_dump() if request.metadata else None,
@@ -55,26 +52,12 @@ async def generate_manual_tests(
             conversation_history=[msg.model_dump() for msg in request.conversation_history] if request.conversation_history else None
         )
 
-        # Validate and auto-fix if needed
-        validation_result = await validator.validate_with_ai_retry(
-            code=result["code"],
-            ai_service=ai_service,
-            original_requirements=request.requirements,
-            max_retries=2
-        )
-
-        # Use fixed code if validation succeeded
-        final_code = validation_result["final_code"]
-        
-        # Get final validation details
-        final_validation = validation_result["validation_result"]
-
         response = ManualTestResponse(
-            code=final_code,
+            code=result["code"],
             test_cases=result["test_cases"],
             validation=ValidationResult(
-                is_valid=final_validation["is_valid"],
-                errors=final_validation.get("syntax_errors", []) + final_validation.get("runtime_errors", []),
+                is_valid=True,
+                errors=[],
                 warnings=[],
                 suggestions=[]
             ),
@@ -86,9 +69,7 @@ async def generate_manual_tests(
             "Manual tests generated successfully",
             user=username,
             test_cases_count=len(result["test_cases"]),
-            generation_time=result["generation_time"],
-            validation_retries=validation_result["retries_count"],
-            is_valid=validation_result["is_valid"]
+            generation_time=result["generation_time"]
         )
 
         return response
@@ -297,23 +278,6 @@ def calculate_coverage(result: Dict[str, Any]) -> float:
     return min(100.0, len(endpoints) * 10.0)
 
 
-# Schemas for code execution
-class CodeExecutionRequest(BaseModel):
-    code: str
-    source_code: Optional[str] = None
-    timeout: int = 60
-    run_with_pytest: bool = False  # Enable pytest/Allure execution
-
-
-class CodeExecutionResponse(BaseModel):
-    is_valid: bool
-    can_execute: bool
-    syntax_errors: List[str]
-    runtime_errors: List[str]
-    execution_output: Optional[str] = None
-    execution_time: Optional[float] = None
-    allure_report_path: Optional[str] = None  # Path to Allure results
-    allure_results: Optional[Dict[str, Any]] = None  # Parsed Allure test results
 
 
 class GenerateWithValidationRequest(ManualTestRequest):
@@ -323,69 +287,11 @@ class GenerateWithValidationRequest(ManualTestRequest):
 
 class GenerateWithValidationResponse(BaseModel):
     code: str
-    validation: CodeExecutionResponse
+    validation: ValidationResult
     test_cases: List[Dict[str, Any]]
     metadata: Dict[str, Any]
 
 
-@router.post("/execute", response_model=CodeExecutionResponse)
-async def execute_code(
-    request: CodeExecutionRequest,
-    current_user: Dict = Depends(get_current_user_optional)
-) -> CodeExecutionResponse:
-    """
-    Execute Python code with optional pytest/Allure support and return results
-    """
-    user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
-    username = current_user.get('username', 'anonymous') if current_user else 'anonymous'
-    await rate_limiter.check_limit(f"execute:code:{user_id}")
-
-    try:
-        logger.info(
-            "Executing code",
-            user=username,
-            code_length=len(request.code),
-            has_source=bool(request.source_code),
-            with_pytest=request.run_with_pytest
-        )
-
-        # UI/pytest runs may need longer than the default 10s, honor client timeout
-        validator = CodeValidator(timeout=request.timeout)
-        result = validator.execute_code(
-            code=request.code,
-            source_code=request.source_code,
-            run_with_pytest=request.run_with_pytest
-        )
-
-        logger.info(
-            "Code execution completed",
-            user=username,
-            is_valid=result.is_valid,
-            can_execute=result.can_execute,
-            has_allure=bool(result.allure_results)
-        )
-
-        return CodeExecutionResponse(
-            is_valid=result.is_valid,
-            can_execute=result.can_execute,
-            syntax_errors=result.syntax_errors,
-            runtime_errors=result.runtime_errors,
-            execution_output=result.execution_output,
-            execution_time=result.execution_time,
-            allure_report_path=result.allure_report_path,
-            allure_results=result.allure_results,
-        )
-
-    except Exception as e:
-        logger.error(
-            "Code execution failed",
-            user=username,
-            error=str(e)
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Code execution failed: {str(e)}"
-        )
 
 
 @router.post("/manual/validated", response_model=GenerateWithValidationResponse)
@@ -394,23 +300,15 @@ async def generate_manual_tests_with_validation(
     current_user: Dict = Depends(get_current_user_optional)
 ) -> GenerateWithValidationResponse:
     """
-    Generate manual test cases with automatic validation
-    Pipeline: TestGenerator -> Validator -> Response
+    Generate manual test cases
     """
     user_id = current_user.get('id', 'anonymous') if current_user else 'anonymous'
-    username = current_user.get('username', 'anonymous') if current_user else 'anonymous'
     await rate_limiter.check_limit(f"generate:validated:{user_id}")
 
     try:
-        logger.info(
-            "Generating tests with validation",
-            user=username,
-            requirements_length=len(request.requirements),
-            validate=request.validate_code
-        )
-
-        # Step 1: Generate tests
         ai_service = AIService()
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
+
         result = await ai_service.generate_manual_tests(
             requirements=request.requirements,
             metadata=request.metadata.model_dump() if request.metadata else None,
@@ -418,53 +316,35 @@ async def generate_manual_tests_with_validation(
             conversation_history=[msg.model_dump() for msg in request.conversation_history] if request.conversation_history else None
         )
 
-        # Step 2: Validate generated code
-        validation_result = None
-        if request.validate_code:
-            validator = get_code_validator()
-            validation_result = validator.execute_code(
-                code=result["code"],
-                source_code=request.source_code
-            )
-
-            logger.info(
-                "Validation completed",
-                user=username,
-                is_valid=validation_result.is_valid,
-                can_execute=validation_result.can_execute
-            )
-
-            # If validation failed, try to fix
-            if not validation_result.can_execute:
-                logger.warning(
-                    "Generated code failed validation, attempting to fix",
-                    user=username,
-                    errors=validation_result.runtime_errors
-                )
-                # Could implement auto-fix logic here
-
-        # Step 3: Return response
-        return GenerateWithValidationResponse(
+        response = GenerateWithValidationResponse(
             code=result["code"],
-            validation=CodeExecutionResponse(
-                is_valid=validation_result.is_valid if validation_result else True,
-                can_execute=validation_result.can_execute if validation_result else True,
-                syntax_errors=validation_result.syntax_errors if validation_result else [],
-                runtime_errors=validation_result.runtime_errors if validation_result else [],
-                execution_output=validation_result.execution_output if validation_result else None,
-                execution_time=validation_result.execution_time if validation_result else None,
+            validation=ValidationResult(
+                is_valid=True,
+                errors=[],
+                warnings=[],
+                suggestions=[]
             ),
-            test_cases=result.get("test_cases", []),
-            metadata=result.get("metadata", {}),
+            test_cases=result["test_cases"],
+            metadata=request.metadata
         )
 
+        logger.info(
+            "Manual tests generated successfully",
+            user=username,
+            test_cases_count=len(result["test_cases"]),
+            generation_time=result["generation_time"]
+        )
+
+        return response
+
     except Exception as e:
+        username = current_user.get("username", "anonymous") if current_user else "anonymous"
         logger.error(
-            "Failed to generate validated tests",
+            "Failed to generate manual tests",
             user=username,
             error=str(e)
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate validated tests: {str(e)}"
+            detail=f"Failed to generate manual tests: {str(e)}"
         )

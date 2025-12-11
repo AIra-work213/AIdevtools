@@ -1,30 +1,8 @@
 import { useState } from 'react'
-import { GlobeAltIcon, CodeBracketIcon, CursorArrowRaysIcon, PlayIcon } from '@heroicons/react/24/outline'
+import { GlobeAltIcon, CodeBracketIcon, CursorArrowRaysIcon } from '@heroicons/react/24/outline'
 import { CodeEditor } from '@/components/editor/CodeEditor'
 import { toast } from 'react-hot-toast'
 
-interface ExecutionResult {
-  is_valid: boolean
-  can_execute: boolean
-  syntax_errors: string[]
-  runtime_errors: string[]
-  execution_output: string | null
-  execution_time: number | null
-  allure_report_path: string | null
-  allure_results: {
-    total_tests: number
-    passed: number
-    failed: number
-    broken: number
-    skipped: number
-    tests: Array<{
-      name: string
-      status: string
-      duration: number
-      fullName: string
-    }>
-  } | null
-}
 
 interface UiTestResponse {
   code: string
@@ -58,9 +36,7 @@ export function UiTests() {
   const [framework, setFramework] = useState<'playwright' | 'selenium' | 'cypress'>('playwright')
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<UiTestResponse | null>(null)
-  const [isExecuting, setIsExecuting] = useState(false)
-  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null)
-
+  
   const addSelector = () => {
     setSelectors([
       ...selectors,
@@ -133,62 +109,7 @@ export function UiTests() {
     }
   }
 
-  const handleExecute = async () => {
-    if (!result?.code) {
-      toast.error('Нет кода для выполнения')
-      return
-    }
-
-    // Execution inside container поддерживаем только для Python/Selenium
-    if (framework !== 'selenium') {
-      toast.error('Запуск внутри контейнера доступен только для Selenium (Python). Для Playwright/Cypress скачайте тесты и запустите локально.')
-      return
-    }
-
-    setIsExecuting(true)
-    setExecutionResult(null)
-
-    try {
-      const hasAllure = result.code.includes('@allure') || result.code.includes('import allure')
-
-      const response = await fetch('/api/v1/generate/execute', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: result.code,
-          source_code: sourceCode.trim() || null,
-          timeout: 60,
-          run_with_pytest: hasAllure,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Ошибка выполнения кода')
-      }
-
-      const execResult = await response.json()
-      setExecutionResult(execResult)
-
-      if (execResult.can_execute) {
-        if (execResult.allure_results) {
-          const { passed, total_tests } = execResult.allure_results
-          toast.success(`✅ Тесты выполнены: ${passed}/${total_tests} пройдено`)
-        } else {
-          toast.success(`✅ Код выполнен успешно`)
-        }
-      } else {
-        toast.error('❌ Ошибки выполнения')
-      }
-    } catch (error) {
-      console.error('Execution error:', error)
-      toast.error('Произошла ошибка при выполнении кода')
-    } finally {
-      setIsExecuting(false)
-    }
-  }
-
+  
   const handleDownload = () => {
     if (!result?.code) return
 
@@ -408,46 +329,11 @@ export function UiTests() {
             <>
               {/* Summary */}
               <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Результаты генерации
                   </h3>
-                  <button
-                    onClick={handleExecute}
-                    disabled={isExecuting}
-                    className="btn-primary flex items-center gap-2"
-                  >
-                    {isExecuting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                        Выполнение...
-                      </>
-                    ) : (
-                      <>
-                        <PlayIcon className="h-5 w-5" />
-                        Запустить тесты
-                      </>
-                    )}
-                  </button>
-                </div>
 
-                {/* Headless Info */}
-                {(framework === 'selenium' || framework === 'playwright') && (
-                  <div className="mb-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3">
-                    <div className="flex items-start gap-2">
-                      <svg className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                      <div className="text-sm text-blue-800 dark:text-blue-200">
-                        <p className="font-medium mb-1">ℹ️ Headless режим</p>
-                        <p className="text-xs">
-                          Тесты запускаются в headless браузере (без GUI) прямо в контейнере
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
+                
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
                     <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
@@ -549,109 +435,6 @@ export function UiTests() {
                 </div>
               </div>
 
-              {/* Execution Results - Same as ApiTests */}
-              {executionResult && (
-                <div className="card">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    Результаты выполнения
-                  </h3>
-
-                  {executionResult.allure_results ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-5 gap-2">
-                        <div className="bg-gray-100 dark:bg-gray-800 rounded p-3 text-center">
-                          <div className="text-2xl font-bold">{executionResult.allure_results.total_tests}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Всего</div>
-                        </div>
-                        <div className="bg-green-100 dark:bg-green-900/30 rounded p-3 text-center">
-                          <div className="text-2xl font-bold text-green-600">{executionResult.allure_results.passed}</div>
-                          <div className="text-xs text-green-600 dark:text-green-400">Пройдено</div>
-                        </div>
-                        <div className="bg-red-100 dark:bg-red-900/30 rounded p-3 text-center">
-                          <div className="text-2xl font-bold text-red-600">{executionResult.allure_results.failed}</div>
-                          <div className="text-xs text-red-600 dark:text-red-400">Провалено</div>
-                        </div>
-                        <div className="bg-orange-100 dark:bg-orange-900/30 rounded p-3 text-center">
-                          <div className="text-2xl font-bold text-orange-600">{executionResult.allure_results.broken}</div>
-                          <div className="text-xs text-orange-600 dark:text-orange-400">Сломано</div>
-                        </div>
-                        <div className="bg-gray-100 dark:bg-gray-800 rounded p-3 text-center">
-                          <div className="text-2xl font-bold">{executionResult.allure_results.skipped}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Пропущено</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {executionResult.allure_results.tests.map((test, idx) => (
-                          <div
-                            key={idx}
-                            className={`p-3 rounded border ${
-                              test.status === 'passed'
-                                ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-                                : test.status === 'failed'
-                                ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
-                                : 'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="font-medium text-sm">{test.name}</div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{test.fullName}</div>
-                              </div>
-                              <div className="text-right">
-                                <span className={`text-xs font-medium ${
-                                  test.status === 'passed' ? 'text-green-600' :
-                                  test.status === 'failed' ? 'text-red-600' : 'text-orange-600'
-                                }`}>
-                                  {test.status.toUpperCase()}
-                                </span>
-                                <div className="text-xs text-gray-500 mt-1">{test.duration}ms</div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      {executionResult.can_execute ? (
-                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                          <div className="text-green-600 dark:text-green-400 font-medium mb-2">Выполнено успешно</div>
-                          {executionResult.execution_output && (
-                            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                              {executionResult.execution_output}
-                            </pre>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                          <div className="text-red-600 dark:text-red-400 font-medium mb-2">Ошибка выполнения</div>
-                          {executionResult.syntax_errors.length > 0 && (
-                            <div className="mb-2">
-                              <div className="text-sm font-medium">Синтаксические ошибки:</div>
-                              <ul className="text-sm list-disc list-inside">
-                                {executionResult.syntax_errors.map((err, idx) => (
-                                  <li key={idx}>{err}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {executionResult.runtime_errors.length > 0 && (
-                            <div>
-                              <div className="text-sm font-medium">Ошибки выполнения:</div>
-                              <ul className="text-sm list-disc list-inside">
-                                {executionResult.runtime_errors.map((err, idx) => (
-                                  <li key={idx}>{err}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
             </>
           ) : (
             <div className="card">
