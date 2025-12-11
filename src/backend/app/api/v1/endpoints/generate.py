@@ -15,7 +15,7 @@ from app.schemas.test import (
     ValidationResult
 )
 from app.services.ai_service import AIService
-from app.services.code_validator import get_code_validator
+from app.services.code_validator import CodeValidator, get_code_validator
 from app.core.deps import RateLimiter, get_current_user, get_current_user_optional
 
 logger = structlog.get_logger(__name__)
@@ -301,7 +301,7 @@ def calculate_coverage(result: Dict[str, Any]) -> float:
 class CodeExecutionRequest(BaseModel):
     code: str
     source_code: Optional[str] = None
-    timeout: int = 10
+    timeout: int = 60
     run_with_pytest: bool = False  # Enable pytest/Allure execution
 
 
@@ -349,7 +349,8 @@ async def execute_code(
             with_pytest=request.run_with_pytest
         )
 
-        validator = get_code_validator()
+        # UI/pytest runs may need longer than the default 10s, honor client timeout
+        validator = CodeValidator(timeout=request.timeout)
         result = validator.execute_code(
             code=request.code,
             source_code=request.source_code,
