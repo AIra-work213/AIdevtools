@@ -156,12 +156,17 @@ class CodeValidator:
                 # Execute code directly
                 cmd = ["python3", temp_file]
             
+            # Propagate env and hint browser locations for Selenium/Playwright
+            env = os.environ.copy()
+            env.setdefault("CHROME_BIN", "/usr/bin/chromium")
+            env.setdefault("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
             # Execute code in subprocess for isolation
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
+                env=env,
             )
             
             execution_time = time.time() - start_time
