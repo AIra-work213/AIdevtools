@@ -139,6 +139,12 @@ export function UiTests() {
       return
     }
 
+    // Execution inside container поддерживаем только для Python/Selenium
+    if (framework !== 'selenium') {
+      toast.error('Запуск внутри контейнера доступен только для Selenium (Python). Для Playwright/Cypress скачайте тесты и запустите локально.')
+      return
+    }
+
     setIsExecuting(true)
     setExecutionResult(null)
 
@@ -153,7 +159,7 @@ export function UiTests() {
         body: JSON.stringify({
           code: result.code,
           source_code: sourceCode.trim() || null,
-          timeout: 30,
+          timeout: 60,
           run_with_pytest: hasAllure,
         }),
       })

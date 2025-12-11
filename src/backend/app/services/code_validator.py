@@ -147,7 +147,7 @@ class CodeValidator:
                     temp_file,
                     "-v",
                     f"--alluredir={allure_results_path}",
-                    "--tb=short",
+                    "--tb=long",
                     "-p", "no:warnings"  # Suppress warnings for cleaner output
                 ]
                 
@@ -203,7 +203,7 @@ class CodeValidator:
                     return_code=result.returncode,
                     stderr_length=len(result.stderr),
                     stdout_length=len(result.stdout),
-                    sample_output=full_output[:2000]
+                    sample_output=full_output[:10000]
                 )
             else:
                 can_execute = True
