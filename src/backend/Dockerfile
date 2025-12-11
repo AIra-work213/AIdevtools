@@ -47,8 +47,14 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libxrandr2 \
     xdg-utils \
+    chromium \
+    chromium-driver \
     && playwright install chromium \
     && rm -rf /var/lib/apt/lists/*
+
+# Hint Selenium about chromium locations
+ENV CHROME_BIN=/usr/bin/chromium \
+    CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
 # Copy application code
 COPY . .
