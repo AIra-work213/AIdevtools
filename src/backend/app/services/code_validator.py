@@ -189,14 +189,16 @@ class CodeValidator:
                 else:
                     runtime_errors.append(f"pytest exit code {result.returncode}")
                 
-                runtime_errors.append(result.stderr)
+                # Surface whatever output we have (stdout/stderr) to help debug
+                runtime_errors.append(full_output or result.stderr or execution_output)
                 can_execute = False
                 
                 logger.warning(
                     "Code execution failed",
                     return_code=result.returncode,
                     stderr_length=len(result.stderr),
-                    stdout_length=len(result.stdout)
+                    stdout_length=len(result.stdout),
+                    sample_output=full_output[:500]
                 )
             else:
                 can_execute = True
