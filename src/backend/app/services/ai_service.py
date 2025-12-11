@@ -1045,10 +1045,14 @@ Return ONLY code, no markdown, no explanations."""
             
             self.logger.info("STAGE 1 completed", code_length=len(base_code))
             
-            # ============ STAGE 2: Wrap with Allure (Python only) ============
+            # ============ STAGE 2: Wrap with Allure (Python-only, Selenium) ============
             final_code = base_code
-            
-            if framework in ["playwright", "selenium"]:  # Python frameworks
+
+            # Skip Allure wrapping for TypeScript/JS frameworks (playwright/cypress)
+            # They should be executed with their own runners, not pytest/Allure (Python-style)
+            if framework in ["playwright", "cypress"]:
+                self.logger.info("Skipping Allure wrapping for JS/TS framework", framework=framework)
+            elif framework in ["selenium"]:  # Python selenium only
                 self.logger.info("STAGE 2: Wrapping with Allure decorators")
                 
                 stage2_system = """You are an expert in Allure test reporting.

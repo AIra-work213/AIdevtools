@@ -203,7 +203,7 @@ class CodeValidator:
                     return_code=result.returncode,
                     stderr_length=len(result.stderr),
                     stdout_length=len(result.stdout),
-                    sample_output=full_output[:500]
+                    sample_output=full_output[:2000]
                 )
             else:
                 can_execute = True

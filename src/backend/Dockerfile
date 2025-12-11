@@ -49,12 +49,14 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     chromium \
     chromium-driver \
+    && ln -sf /usr/lib/chromium/chromedriver /usr/bin/chromedriver \
+    && ln -sf /usr/bin/chromium /usr/bin/google-chrome \
     && playwright install chromium \
     && rm -rf /var/lib/apt/lists/*
 
 # Hint Selenium about chromium locations
 ENV CHROME_BIN=/usr/bin/chromium \
-    CHROMEDRIVER_PATH=/usr/bin/chromedriver
+    CHROMEDRIVER_PATH=/usr/lib/chromium/chromedriver
 
 # Copy application code
 COPY . .
