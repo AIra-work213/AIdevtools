@@ -15,6 +15,7 @@ from app.schemas.test import (
     ValidationResult
 )
 from app.services.ai_service import AIService
+from app.services.code_validator import get_code_validator
 from app.core.deps import RateLimiter, get_current_user, get_current_user_optional
 
 logger = structlog.get_logger(__name__)

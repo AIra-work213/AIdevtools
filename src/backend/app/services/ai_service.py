@@ -1,5 +1,6 @@
 import json
 import time
+import asyncio
 from typing import Any, Dict, List, Optional, Union
 import structlog
 
@@ -1044,17 +1045,31 @@ Return ONLY code, no markdown, no explanations."""
 
 CRITICAL: Configure Selenium for HEADLESS mode (Docker/CI compatible):
 ```python
+from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+import os
 
 options = Options()
-options.add_argument('--headless')
+options.add_argument('--headless=new')  # Use new headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--disable-gpu')
+options.add_argument('--disable-extensions')
+options.add_argument('--window-size=1920,1080')
 
-driver = webdriver.Chrome(options=options)
+# Try to find ChromeDriver (Docker uses /usr/lib/chromium/chromedriver)
+chromedriver_path = os.getenv('CHROMEDRIVER_PATH')
+if not chromedriver_path:
+    for path in ['/usr/lib/chromium/chromedriver', '/usr/bin/chromedriver', '/usr/local/bin/chromedriver']:
+        if os.path.exists(path):
+            chromedriver_path = path
+            break
+
+service = Service(chromedriver_path) if chromedriver_path else Service()
+driver = webdriver.Chrome(service=service, options=options)
 ```
-Use this configuration in ALL test fixtures!"""
+Use this exact configuration in ALL test fixtures! ChromeDriver is at /usr/lib/chromium/chromedriver in Docker."""
 
             # Предварительно получаем реальный контент страницы
             real_page_content = ""
@@ -1122,19 +1137,117 @@ Include:
 - Proper assertions for EXISTING elements
 - NO Allure decorators yet
 
-Note: If adding Allure later, use allure.severity_level.NORMAL/HIGH/CRITICAL (not Severity.NORMAL)
+Note: If adding Allure later, use allure.severity_level.NORMAL or allure.severity_level.CRITICAL (NOT Severity.NORMAL or CRITICAL alone)
 
 Return ONLY code, no markdown, no explanations."""
         
         try:
-            base_code = await self.llm_client.chat_completion(
+            # ============ STAGE 1: Multi-Model Parallel Generation ============
+            self.logger.info("STAGE 1: Starting parallel generation with 3 models")
+            
+            # Define 3 models for parallel generation
+            models = [
+                "Qwen/Qwen3-235B-A22B-Instruct-2507",
+                "openai/gpt-oss-120b",
+                "t-tech/T-pro-it-2.0"
+            ]
+            
+            # Call all 3 models in parallel with the same prompt
+            async def call_model_with_fallback(model_name: str) -> str:
+                """Call a specific model with error handling"""
+                try:
+                    temp_client = AsyncOpenAI(
+                        api_key=settings.CLOUD_API_KEY,
+                        base_url=settings.CLOUD_API_URL,
+                        timeout=120.0,
+                        max_retries=1
+                    )
+                    
+                    response = await temp_client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": stage1_system},
+                            {"role": "user", "content": stage1_user}
+                        ],
+                        temperature=0.3,
+                        max_tokens=4000
+                    )
+                    
+                    if response.choices and response.choices[0].message.content:
+                        code = response.choices[0].message.content
+                        self.logger.info(f"Model {model_name} generated code", length=len(code))
+                        return code
+                    else:
+                        self.logger.error(f"Model {model_name} returned empty response")
+                        return ""
+                        
+                except Exception as e:
+                    self.logger.error(f"Model {model_name} failed", error=str(e))
+                    return ""
+            
+            # Execute all 3 models in parallel
+            model_outputs = await asyncio.gather(
+                *[call_model_with_fallback(model) for model in models],
+                return_exceptions=True
+            )
+            
+            # Filter out empty responses and exceptions
+            valid_outputs = [
+                output for output in model_outputs 
+                if isinstance(output, str) and output.strip()
+            ]
+            
+            if not valid_outputs:
+                raise ValueError("All 3 models failed to generate code")
+            
+            self.logger.info(f"STAGE 1: Got {len(valid_outputs)} valid outputs from {len(models)} models")
+            
+            # ============ STAGE 1.5: Qwen Aggregator ============
+            self.logger.info("STAGE 1.5: Using Qwen to aggregate best code from all models")
+            
+            aggregator_system = """You are an expert code aggregator. Your task is to analyze multiple AI-generated test code versions and create the BEST combined version.
+
+CRITICAL RULES:
+1. Analyze all versions and identify the BEST elements from each:
+   - Most reliable selectors (prefer ID > data-test-id > CSS classes)
+   - Most robust assertions
+   - Best error handling
+   - Most comprehensive test coverage
+2. Combine the best parts into ONE working test file
+3. Remove duplicates and conflicts
+4. Ensure the final code is syntactically correct and executable
+5. Keep ALL imports and setup/teardown logic
+6. Use ONLY elements that exist on the actual page"""
+
+            versions_text = ""
+            for i, code in enumerate(valid_outputs, 1):
+                versions_text += f"\n\n{'='*60}\nVERSION {i} (from {models[i-1]}):\n{'='*60}\n{code}\n"
+            
+            aggregator_user = f"""Analyze these {len(valid_outputs)} test code versions and create the BEST combined version:
+
+{versions_text}
+
+Your task:
+1. Compare all versions
+2. Select the BEST selectors from each (most reliable, most specific)
+3. Select the BEST assertions (most comprehensive, most robust)
+4. Combine into ONE complete, working test file
+5. Remove any duplicates or conflicts
+6. Ensure proper imports and setup/teardown
+
+Return ONLY the final Python code, no markdown, no explanations."""
+
+            aggregated_code = await self.llm_client.chat_completion(
                 messages=[
-                    {"role": "system", "content": stage1_system},
-                    {"role": "user", "content": stage1_user}
+                    {"role": "system", "content": aggregator_system},
+                    {"role": "user", "content": aggregator_user}
                 ],
-                temperature=0.3,
+                temperature=0.2,
                 max_tokens=4000
             )
+            
+            # Use aggregated code as base_code
+            base_code = aggregated_code
             
             # Clean code
             if isinstance(base_code, str):
@@ -1149,7 +1262,7 @@ Return ONLY code, no markdown, no explanations."""
                                 base_code = part
                             break
             
-            self.logger.info("STAGE 1 completed", code_length=len(base_code))
+            self.logger.info("STAGE 1 & 1.5 completed", code_length=len(base_code))
             
             # ============ STAGE 2: Wrap with Allure (Python-only, Selenium) ============
             final_code = base_code
@@ -1177,22 +1290,26 @@ CRITICAL REQUIREMENTS:
 4. Keep ALL existing functionality exactly the same
 
 Add:
-1. Imports: allure, allure_commons.types.Severity
-   Note: Use allure.severity_level for severity values (e.g., allure.severity_level.NORMAL)
+1. Import allure only (no need for allure_commons.types.Severity)
+   Use allure.severity_level.NORMAL, allure.severity_level.CRITICAL for severity values
 2. Class decorators:
    - @allure.feature("UI Testing")
    - @allure.story("User Workflows")
    - @allure.tag("ui", "e2e", "generated_by_ai")
 3. For EACH test method add:
    - @allure.title("Descriptive test title")
-   - @allure.severity(allure.severity_level.NORMAL for most tests, allure.severity_level.CRITICAL for critical flows)
+   - @allure.severity(allure.severity_level.NORMAL) for most tests
+   - @allure.severity(allure.severity_level.CRITICAL) for critical flows only
 4. Wrap test steps with allure.step():
    - Navigation: "Navigate to {{url}}"
    - Actions: "Click {{element}}", "Enter text in {{field}}"
    - Verifications: "Verify {{condition}}"
 
-IMPORTANT: Do NOT change test URLs, element selectors, or assertions.
-The tests should work exactly the same as before, just with Allure reporting.
+IMPORTANT: 
+- Do NOT use Severity.NORMAL or Severity.CRITICAL (incorrect)
+- Use allure.severity_level.NORMAL or allure.severity_level.CRITICAL (correct)
+- Do NOT change test URLs, element selectors, or assertions
+- The tests should work exactly the same as before, just with Allure reporting
 
 Return ONLY Python code, no markdown."""
                 

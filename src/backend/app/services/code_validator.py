@@ -159,7 +159,7 @@ class CodeValidator:
             # Propagate env and hint browser locations for Selenium/Playwright
             env = os.environ.copy()
             env.setdefault("CHROME_BIN", "/usr/bin/chromium")
-            env.setdefault("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
+            env.setdefault("CHROMEDRIVER_PATH", "/usr/lib/chromium/chromedriver")
             # Execute code in subprocess for isolation
             result = subprocess.run(
                 cmd,
