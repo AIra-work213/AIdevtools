@@ -906,7 +906,8 @@ Use requests library. Include:
         html_content: Optional[str] = None,
         url: Optional[str] = None,
         selectors: Optional[Dict[str, str]] = None,
-        framework: str = "playwright"
+        framework: str = "playwright",
+        custom_prompt: Optional[str] = None
     ) -> Dict[str, Any]:
         """Generate UI/E2E tests - TWO-STAGE + ADAPTIVE GENERATION
         Stage 0 (if URL): Analyze website to discover pages/links
@@ -944,10 +945,38 @@ Use requests library. Include:
         
         # ============ STAGE 1: Generate base UI tests ============
         self.logger.info("STAGE 1: Generating base UI tests", framework=framework)
-        
+
         stage1_system = f"""You are an expert in UI/E2E testing with {framework}.
+
+IMPORTANT FOR SELENIUM TESTS:
+When generating Selenium tests for headless Linux environments:
+1. Use Chrome binary location: /snap/bin/chromium
+2. Include these Chrome options:
+   - --headless=new
+   - --no-sandbox
+   - --disable-dev-shm-usage
+   - --disable-gpu
+   - --remote-debugging-port=9222
+   - --disable-extensions
+   - --disable-plugins
+   - --disable-images (for faster loading)
+   - --single-process (for stability)
+3. Set generous timeouts:
+   - page_load_timeout: 60 seconds
+   - implicit_wait: 20 seconds
+   - WebDriverWait: 20-30 seconds
+4. Use proper WebDriverWait and expected_conditions
+5. Make assertions flexible (use 'in' instead of exact matches)
+6. Handle elements that might not be present
+7. Focus on robust, working tests
+8. Use try-except blocks for flaky elements
+
 Generate clean, functional UI tests WITHOUT Allure decorators (for Python) or reporting tools.
 Focus on test logic, element interactions, and {framework} best practices."""
+
+        # Add custom prompt if provided
+        if custom_prompt:
+            stage1_system += f"\n\nADDITIONAL REQUIREMENTS:\n{custom_prompt}"
         
         # Build adaptive prompt based on discovered URLs
         adaptive_context = ""

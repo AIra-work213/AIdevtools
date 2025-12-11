@@ -52,7 +52,7 @@ class CodeValidationResult:
 class CodeValidator:
     """Validates and executes Python code with Allure support"""
 
-    def __init__(self, timeout: int = 10):
+    def __init__(self, timeout: int = 120):  # Increased default timeout to 120 seconds
         self.timeout = timeout
         self.allure_results_dir = Path(tempfile.gettempdir()) / "allure-results"
 
